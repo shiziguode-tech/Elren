@@ -3,6 +3,7 @@ name = "elren-agent"
 version = "1.0.0"
 description = "A local-first multi-model desktop agent with tools, approvals, and audit logs"
 readme = "README.md"
+license = {file = "LICENSE"}
 requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.115,<1",

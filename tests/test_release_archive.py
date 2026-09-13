@@ -1027,5 +1027,14 @@ def test_source_release_documentation_retains_honest_publication_gates() -> None
     assert "does not establish a reasoning-quality improvement" in normalized_notes
     assert "do not substitute for final archive inspection" in normalized_notes
     assert "Public-distribution gates still open" in notes
-    assert "no top-level project LICENSE file" in notes
+    assert "owner has adopted the top-level source-available LICENSE" in notes
+    license_text = Path("LICENSE").read_text(encoding="utf-8")
+    assert "Elren 源码可见许可证 1.0" in license_text
+    assert "本许可不约定特定国家或地区的准据法" in license_text
+    assert "允许收取实际安装" in license_text
+    assert "收费或免费托管" in license_text
+    assert "允许免费分发完整修复版" in license_text
+    assert "不强制向全球公众公开" in license_text
+    assert "待填写" not in license_text
+    assert "待决定" not in license_text
     assert "notice gaps" in notes

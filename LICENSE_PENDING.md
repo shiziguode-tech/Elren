@@ -1,8 +1,9 @@
 # Public release prerequisites
 
-This repository has no top-level project license yet. Keep it private until the
-owner has selected a suitable license for the original Elren code and reviewed
-the rights and distribution obligations of the third-party components.
+The repository is public. The owner has adopted the custom Elren Source Available
+License 1.0 in LICENSE for eligible original material. This file now tracks the
+remaining review items, not a pending top-level license choice. Adoption is not
+a legal compliance certification and does not complete third-party obligations.
 
 - Review vendored and linked components, their exact versions, modifications,
   license texts, copyright notices and corresponding-source requirements.
@@ -17,6 +18,8 @@ the rights and distribution obligations of the third-party components.
   The preparation scan used known local credentials and selected patterns; it is
   not a complete or independent security audit.
 - Verify fresh-environment builds on Windows and macOS before making broad claims.
-- Add LICENSE and update README once the owner approves the license decision.
+- Review the custom LICENSE with qualified counsel; no lawyer approval is claimed.
 
-No license decision or public upload was made during source preparation.
+The historical drafts and their AI review remain for provenance, not as operative
+licenses. Existing binary releases have not been rebuilt or relicensed by this
+source-documentation update.

@@ -15,13 +15,14 @@ succeeded; this does not certify every native GUI or hardware scenario.
 
 ## Public-distribution gates still open
 
-- There is no top-level project LICENSE file yet; the owner must choose a license
-  after reviewing third-party obligations and notice gaps.
+- The owner has adopted the top-level source-available LICENSE. Third-party
+  obligations and notice gaps remain under review; adoption is not legal approval.
 - Fresh-environment builds and GitHub Actions runs remain unverified for this
   source repository. Local tests do not substitute for final archive inspection.
 - These artifacts are not represented as commercially signed, notarized, legally
   approved, or universally compatible. Follow each platform's documented trust
   and permission flow rather than disabling operating-system security.
-- Finish an independent source/history secret review before making it public.
+- An independent source/history secret review remains outstanding despite the
+  repository now being public; the preparation scan was limited in scope.
 
 See LICENSE_PENDING.md and THIRD_PARTY_NOTICES.md before publication.

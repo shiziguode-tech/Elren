@@ -3,8 +3,9 @@
 This file is a factual inventory of notable third-party material present in the
 current Elren v1.0 release workspace. It is not a substitute for the license
 text shipped with a component, it is not an exhaustive legal opinion, and it
-does not grant a license to Elren. This repository currently has no top-level
-project `LICENSE` file.
+does not grant a license to Elren. The top-level `LICENSE` applies only to
+eligible original Elren material; third-party materials retain their own terms.
+Adopting that license does not complete the redistribution gates below.
 
 ## Audiveris 5.11.0
 
