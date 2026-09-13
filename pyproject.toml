@@ -1,0 +1,96 @@
+[project]
+name = "elren-agent"
+version = "1.0.0"
+description = "A local-first multi-model desktop agent with tools, approvals, and audit logs"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115,<1",
+  "uvicorn[standard]>=0.34,<1",
+  "httpx>=0.28,<1",
+  "edge-tts>=7.2.8,<8",
+  "lark-oapi>=1.7,<2",
+  "gradio-client>=1.13,<2",
+  "pydantic>=2.10,<3",
+  "pydantic-settings>=2.7,<3",
+  "python-dotenv>=1.0,<2",
+  "debugpy==1.8.21",
+  "pyautogui>=0.9.54,<1",
+  "pillow>=11,<13",
+  "qrcode>=8,<9",
+  "pycryptodome>=3.20,<4",
+  "tzdata>=2025.2,<2027",
+  "pywinauto>=0.6.9,<1; sys_platform == 'win32'",
+  "psutil>=6,<8",
+  "pyperclip>=1.9,<2",
+  "playwright>=1.55,<2",
+  "rapidocr>=3.9,<4",
+  "onnxruntime>=1.28,<2",
+  "pypdf>=5,<7",
+  "python-docx>=1.1,<2",
+  "striprtf>=0.0.29,<1",
+  "python-pptx>=1.0,<2",
+  "openpyxl>=3.1,<4",
+  "xlrd>=2.0,<3",
+  "reportlab>=4.2,<5",
+  "pywin32>=308; sys_platform == 'win32'",
+  "pyobjc-framework-Quartz>=11,<13; sys_platform == 'darwin'",
+  "pyobjc-framework-Vision>=11,<13; sys_platform == 'darwin'",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=9.0.3,<10", "pytest-asyncio>=1,<2", "ruff>=0.9,<1"]
+benchmark = [
+  "antlr4-python3-runtime==4.11",
+  "duckdb>=1.3,<2",
+  "huggingface-hub>=0.30,<1",
+  "loguru>=0.7,<1",
+  "math-verify>=0.8,<1",
+  "pqdm>=0.2,<1",
+  "regex>=2024.11.6",
+  "termcolor>=2,<4",
+  "tree-sitter>=0.22,<1",
+  "tree-sitter-python>=0.21,<1",
+]
+
+[project.scripts]
+elren = "deepdesk.main:run"
+deepdesk = "deepdesk.main:run"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["deepdesk"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"deepdesk/windows_ocr.ps1" = "deepdesk/windows_ocr.ps1"
+"deepdesk/windows_tts.ps1" = "deepdesk/windows_tts.ps1"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+exclude = [
+  ".git",
+  ".gradle*",
+  ".kotlin",
+  ".ruff_cache",
+  ".venv",
+  "__pycache__",
+  "data",
+  "dist",
+  "mobile/**/build",
+  "node_modules",
+  "outputs",
+  "screenshots",
+  "work",
+]
+
+[tool.ruff.lint]
+# Plugin/process boundaries must convert arbitrary third-party failures into tool results.
+ignore = ["BLE001", "RUF012", "S112", "TRY004"]
+extend-select = ["S104"]

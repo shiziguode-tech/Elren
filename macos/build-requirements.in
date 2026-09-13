@@ -1,0 +1,5 @@
+# macOS build tooling not declared as an Elren runtime dependency.
+# Compile this together with pyproject.toml; do not install it directly.
+pip==26.2.1
+pyinstaller==6.22.2
+wheel==0.48.0

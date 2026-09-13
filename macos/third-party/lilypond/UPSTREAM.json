@@ -1,0 +1,11 @@
+{
+  "name": "GNU LilyPond",
+  "version": "2.26.0",
+  "source": "https://gitlab.com/lilypond/lilypond/-/releases/v2.26.0",
+  "windows_distribution": "https://gitlab.com/lilypond/lilypond/-/releases/v2.26.0/downloads/lilypond-2.26.0-mingw-x86_64.zip",
+  "windows_sha256": "14ddddc233b469ef60d4ffc1c7f35520f15ac6b58e38cab458c60bdcc3af650c",
+  "macos_arm64_distribution": "https://gitlab.com/lilypond/lilypond/-/releases/v2.26.0/downloads/lilypond-2.26.0-darwin-arm64.tar.gz",
+  "macos_arm64_sha256": "18ffc454fef3753c26a015d95a3c232f89b22f052b897c046e0198740a1221be",
+  "license": "GPL-3.0-or-later",
+  "usage": "Unmodified package-local executable typesets jianpu-ly output as SVG and PDF without network access."
+}

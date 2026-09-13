@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Elren</string>
+    <string name="accessibility_service_name">Elren 手机控制</string>
+    <string name="accessibility_description">在持续显示连接通知时，允许已绑定的 Elren 检查并操作本手机。</string>
+</resources>

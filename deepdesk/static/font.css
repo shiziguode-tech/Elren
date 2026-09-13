@@ -1,0 +1,17 @@
+:root {
+  --elren-ui-font: "Microsoft YaHei", "微软雅黑", "Microsoft YaHei UI", "Segoe UI", sans-serif;
+}
+
+body {
+  font-family: var(--elren-ui-font);
+}
+
+/* Form controls do not consistently inherit the document font on Windows.
+   Keep every editable/selectable surface on the same clear UI typeface. */
+:where(button, input, textarea, select, option, optgroup, [contenteditable="true"]) {
+  font-family: var(--elren-ui-font) !important;
+}
+
+:where(input, textarea)::placeholder {
+  font-family: inherit;
+}

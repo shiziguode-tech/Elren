@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "repository": "https://github.com/tesseract-ocr/tessdata",
+  "version": "4.1.0",
+  "commit": "4767ea922bcc460e70b87b1d303ebdfed0897da8",
+  "engine": "legacy-and-lstm",
+  "license": "Apache-2.0",
+  "files": {
+    "eng.traineddata": {"bytes": 23466654, "sha256": "daa0c97d651c19fba3b25e81317cd697e9908c8208090c94c3905381c23fc047"},
+    "chi_sim.traineddata": {"bytes": 44366093, "sha256": "fc05d89ab31d8b4e226910f16a8bcbf78e43bae3e2580bb5feefd052efdab363"},
+    "chi_tra.traineddata": {"bytes": 59025073, "sha256": "559067dc0f7c94788884742129d66a0117dde7f4ff12b263d92147173497db14"},
+    "LICENSE": {"bytes": 11358, "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"}
+  }
+}

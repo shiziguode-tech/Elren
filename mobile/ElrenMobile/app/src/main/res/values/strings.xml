@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Elren</string>
+    <string name="accessibility_service_name">Elren phone control</string>
+    <string name="accessibility_description">Lets your paired Elren inspect and operate this phone while the connection notification is visible.</string>
+</resources>

@@ -1,0 +1,109 @@
+/* Flex children must be allowed to shrink before their own overflow can scroll. */
+main {
+  min-height: 0;
+  overflow: hidden;
+}
+
+aside {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.runtime-probe {
+  width: 100%;
+  margin-top: 10px;
+  padding: 7px 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #121e29;
+  color: #8299ad;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.runtime-probe:hover { color: var(--text); border-color: #426176; }
+
+.welcome {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 32px 20px 70px;
+}
+
+.timeline {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+
+.markdown {
+  color: #cad6e2;
+  font-size: 13px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.markdown > :first-child { margin-top: 0; }
+.markdown > :last-child { margin-bottom: 0; }
+.markdown h1,.markdown h2,.markdown h3,.markdown h4 {
+  color: var(--text);
+  line-height: 1.35;
+  margin: 1.2em 0 .55em;
+}
+.markdown h1 { font-size: 20px; }
+.markdown h2 { font-size: 17px; }
+.markdown h3 { font-size: 15px; }
+.markdown h4 { font-size: 14px; }
+.markdown p { white-space: normal; margin: .65em 0; }
+.markdown ul,.markdown ol { margin: .55em 0; padding-left: 1.7em; }
+.markdown li { margin: .25em 0; }
+.markdown blockquote {
+  margin: .8em 0;
+  padding: .2em 0 .2em 12px;
+  border-left: 3px solid var(--accent2);
+  color: #9eb1c4;
+}
+.markdown hr { border: 0; border-top: 1px solid var(--line); margin: 1.2em 0; }
+.markdown strong { color: #f1f7fd; }
+.markdown a { color: #77c9ff; text-decoration: none; }
+.markdown a:hover { text-decoration: underline; }
+.markdown code.inline-code {
+  display: inline;
+  max-height: none;
+  overflow: visible;
+  padding: 2px 5px;
+  border: 1px solid #304257;
+  border-radius: 5px;
+  background: #0a1119;
+  color: #8ee5d3;
+  font-size: .9em;
+  white-space: normal;
+}
+.markdown pre {
+  margin: .8em 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #080e15;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: visible;
+}
+.markdown pre code {
+  display: block;
+  max-height: none;
+  overflow: visible;
+  color: #a9c0d4;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  tab-size: 4;
+}
+.markdown .table-wrap { overflow-x: auto; margin: .9em 0; }
+.markdown table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.markdown th,.markdown td { border: 1px solid #2b3b4e; padding: 8px 10px; text-align: left; }
+.markdown th { background: #192532; color: #eef4fb; font-weight: 650; }
+.markdown tr:nth-child(even) td { background: #101923; }

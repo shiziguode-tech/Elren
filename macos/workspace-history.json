@@ -1,0 +1,170 @@
+{
+  "plugins/README.md": [
+    "fcd44f5101ec2873db3e57686554ef4262c3aaf3fff3f9a49476e465bf57fba3"
+  ],
+  "plugins/example_time.py.disabled": [
+    "a7a10ef4e5ae12409e280f4fb11b5d22a46b266df92366727a00ad18fada9996"
+  ],
+  "skills/openclaw-bundled/.elren-openclaw-skills-v1": [
+    "cca7254542b506c29681a2877a7a0441d09875a0d7770c5c186922cfd38ff942"
+  ],
+  "skills/openclaw-bundled/.qelvane-openclaw-skills-v1": [
+    "b12e0ff5eba1ba420edc8b6ac2d324a6538ce7808af527f3ff87c410424b8d48"
+  ],
+  "skills/openclaw-bundled/1password": [
+    "eb6411d1ac167d9f7e2d4ab4dfe18e7153d1030707794bd96a06f88204240460"
+  ],
+  "skills/openclaw-bundled/apple-notes": [
+    "cdeb821675ba95b8914c5b8318e69891fef1a69f525adcae8aa1f4583887c686"
+  ],
+  "skills/openclaw-bundled/apple-reminders": [
+    "05edee5419682068059c7983aa11d9b8a5ae1ed539026ae5fad54d840890474c"
+  ],
+  "skills/openclaw-bundled/bear-notes": [
+    "3aedd9720ee0a0fed4542333e8c647f033b7f1fa59fa937cd8f599d83a49bbe6"
+  ],
+  "skills/openclaw-bundled/blogwatcher": [
+    "1510e4e4a0b0e39a4f84e84198fc05d48ce374359ac907e5b9add40cc19bf797"
+  ],
+  "skills/openclaw-bundled/blucli": [
+    "bde2c7ad8de204616d50fd506a298f7e7b79eec947265bbdcd2163bacbd048ef"
+  ],
+  "skills/openclaw-bundled/camsnap": [
+    "901144d7c455e91f973bc1b6a890dc5554a6ac688898718d5035300bbdd34595"
+  ],
+  "skills/openclaw-bundled/clawhub": [
+    "4e46c97fd7ee3a43dd1ff633660ba5f5dbdd6219c190f11111ed9cc924bc8cfe"
+  ],
+  "skills/openclaw-bundled/coding-agent": [
+    "698401e35f663cd54053fb7a9aaad9c07b994f03315444b2424e657260f6eb92"
+  ],
+  "skills/openclaw-bundled/diagram-maker": [
+    "6d55538af9fae4b9b65e71a2b8c3a1d18f6c3cfc419aa66e318bfdf7885e0697"
+  ],
+  "skills/openclaw-bundled/eightctl": [
+    "df6bb9f6f66f7949df6e1711276ff49e212eca6fd6fadca046de4ab080e32a4e"
+  ],
+  "skills/openclaw-bundled/gemini": [
+    "1b27152574bb5e6a9a75ee1ee7e7ed63734e97ec66f746befe0ed63f59e054a0"
+  ],
+  "skills/openclaw-bundled/gh-issues": [
+    "a0c6c92ff9126d427038b46e8eb125e7f2bb47bd897d3264a1c968e3f909cc56"
+  ],
+  "skills/openclaw-bundled/gifgrep": [
+    "6680e6a5a92f593cd6033125fed0626d24f1e2b6b68371cf4d0344edaab344f6"
+  ],
+  "skills/openclaw-bundled/github": [
+    "41b2178119530ddfb2f322bf54471a88190839b98442d5a621a0949f39b78a15"
+  ],
+  "skills/openclaw-bundled/gog": [
+    "3fdefe3e30f8d58b488e86833ca74bdfbe14930ce959c176d24112375736ff40"
+  ],
+  "skills/openclaw-bundled/goplaces": [
+    "7b6fdb0c3ca901c921c82b0e18bb22bc0fda48308f375148086706a4a88aa357"
+  ],
+  "skills/openclaw-bundled/healthcheck": [
+    "379cc63b6770b0e5b414e2ef1b5f944b7f12e881e4c73037dd357a93418c591f"
+  ],
+  "skills/openclaw-bundled/himalaya": [
+    "b2033baccbf94865a0f613e3cd214d5b8b95e5f1bf7b7d8d9b62b2ec1cd48884"
+  ],
+  "skills/openclaw-bundled/mcporter": [
+    "3beb8a2df71f539b7445e2f8e144a88fdad5f82a27e2abc4998f451e169d8aec"
+  ],
+  "skills/openclaw-bundled/meme-maker": [
+    "56c2a457016f7252f69418ca6fdb514c89ec45262f9bcea5c54b0d9fe720ba70"
+  ],
+  "skills/openclaw-bundled/model-usage": [
+    "f821c5e5d868e186ed9f23103cc352b2c4c6196b9fb557b58d8558369e34ffd1"
+  ],
+  "skills/openclaw-bundled/nano-pdf": [
+    "647532db05313025d236b8a08b5a02619a834f82ed73265eded0e984b0a1acfc"
+  ],
+  "skills/openclaw-bundled/node-connect": [
+    "a3c745a16b5bdfd1077b6f0773413d5578d0effadd622d325242f21c5261efdf"
+  ],
+  "skills/openclaw-bundled/node-inspect-debugger": [
+    "106e996797297bb84a82dc5c07a0d62ddaac68716ef3ec1c776785fadaf15bfd"
+  ],
+  "skills/openclaw-bundled/notion": [
+    "1ac85f0ec8bb7ddd946707d1091e1ac98e0c332da7f6b765761408f72f9e6206"
+  ],
+  "skills/openclaw-bundled/obsidian": [
+    "faa4244c6d2cd25caae1c529a556fe8128eb249e3844d27c4e3093a842959e4c"
+  ],
+  "skills/openclaw-bundled/openai-whisper": [
+    "516a5ffb1bbc1b9c3c1cbddfd5c9a5576f3c355feed9e76cbdfa84f16ad32569"
+  ],
+  "skills/openclaw-bundled/openai-whisper-api": [
+    "2199f2a8c2e1e878a37de7389f9af382c6947f827565180408d5eba9d86d57b5"
+  ],
+  "skills/openclaw-bundled/openhue": [
+    "55183963746f1fdedea473c3a1ba0f0a5e055c3b419451fe15a0b928be2957d8"
+  ],
+  "skills/openclaw-bundled/oracle": [
+    "9e58572160f52f2af598265ddf6e161bc6205d9a9d5852295ea39b3337e8cb33"
+  ],
+  "skills/openclaw-bundled/ordercli": [
+    "f1ffb8a82ac24772e9a31de8a2d4d336b21542073b76bbead6f10e1992e8a6f0"
+  ],
+  "skills/openclaw-bundled/peekaboo": [
+    "df567bb06842658422d1df84d35c9ca39ce89bdd153ca870701622a31c00fa3c"
+  ],
+  "skills/openclaw-bundled/pyproject.toml": [
+    "81b4f05b15bad212498744001dc29bd155a26cd10f1847e3ffd17d310f4d6fb5"
+  ],
+  "skills/openclaw-bundled/python-debugpy": [
+    "4e42222da82fd023cded308000514a3f66322752dcb34b566c9303a507bc25e1"
+  ],
+  "skills/openclaw-bundled/sag": [
+    "a9389525ad774a269a9539e4bcc426d1fca78d26bda858e2038eb6ac85cb9c69"
+  ],
+  "skills/openclaw-bundled/session-logs": [
+    "af919c0c49bae853a605f346e94234a3f2dc321fcea2985e61294b9645b94b53"
+  ],
+  "skills/openclaw-bundled/sherpa-onnx-tts": [
+    "37813df617f2b82611dfc61538ee224fc15c536c8cc8a3f5792d3a4135f2d0fb"
+  ],
+  "skills/openclaw-bundled/skill-creator": [
+    "c9bc8cc5acce5f4dceb473dd84e47161cb137f9e87e61e5c7c39cf15c4fff573"
+  ],
+  "skills/openclaw-bundled/songsee": [
+    "fbdc815200dd271c1f033629d7ec365987dcfdfc08c13adc4734bb0a53af20d9"
+  ],
+  "skills/openclaw-bundled/sonoscli": [
+    "7f5e496f2e11e06ca3d70f265c452f3ff4da92b9f0f7eec4e576321ee90923bb"
+  ],
+  "skills/openclaw-bundled/spike": [
+    "78c0c8302f3bacdcef597508284683da1c9b5fcf8738ade633c7a5eaa16980ff"
+  ],
+  "skills/openclaw-bundled/spotify-player": [
+    "4cfd80d7bdc3ee88395abcff73a9f782f903b81884195c5c27d06d7a16ee1472"
+  ],
+  "skills/openclaw-bundled/summarize": [
+    "4ae5bdd945e15f8bd07587ec82fe90a51e9a23d6c399cd5e8af1ade45cb33fd9"
+  ],
+  "skills/openclaw-bundled/taskflow": [
+    "ae5b903567ef19867b86d070f257ac719438aa22a61ae84dc50bdeaa16ba854e"
+  ],
+  "skills/openclaw-bundled/taskflow-inbox-triage": [
+    "83ed3ef15f892c6f4e915e27f6ca9ffc9bee8c8fea0ea2a6d88a61ce3cba73d9"
+  ],
+  "skills/openclaw-bundled/things-mac": [
+    "c7b5b856488759e22c0b82277d7dc36c1ac39b6497fcc85a4d2151d1fd8442f0"
+  ],
+  "skills/openclaw-bundled/tmux": [
+    "a0134e7d556c84e3e82faf73a21c64cc7bfe07b637778b7e6b519b44bd89f433"
+  ],
+  "skills/openclaw-bundled/trello": [
+    "acbae3a64e0a276d99ef8478780b68e6c1eb8f1efff36bad650a485b0bd05cc8"
+  ],
+  "skills/openclaw-bundled/video-frames": [
+    "6351e0c0b1db0ed8754d51e8dd76101176f96875ab7f78ea4855fbb14ee1df15"
+  ],
+  "skills/openclaw-bundled/weather": [
+    "5cfb775c252cd72aa8cfbfb7801496fc776ca551256cc19938442cfa66492f73"
+  ],
+  "skills/openclaw-bundled/xurl": [
+    "b8b0276c33365bebef6788c9dedbd2b3e81060237e610aa446e2b220aa661179"
+  ]
+}

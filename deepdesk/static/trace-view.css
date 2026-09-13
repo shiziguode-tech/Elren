@@ -1,0 +1,103 @@
+.event.final-response .event-card { border-color: #3a746b; background: #10221f; }
+.event.critical-event .event-card { border-color: #70434b; }
+.event.tool-rejected .event-card { background: #27171b; }
+
+.header-copy {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.header-actions { min-width: 0; }
+
+.header-status-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  margin-top: 7px;
+}
+
+.header-status-row .agent-progress,
+.header-status-row .active-model-badge {
+  margin-top: 0;
+}
+
+/* Progress and model-status rows can make the header taller than its original
+   one-line layout. Let the header grow so the title is never clipped and the
+   V4 Pro status pill remains above the divider. */
+header {
+  height: auto;
+  min-height: 96px;
+  align-items: flex-start;
+}
+.settings-checkbox { justify-content: flex-start !important; }
+.settings-checkbox input[type="checkbox"] {
+  flex: none;
+  width: auto;
+  height: auto;
+  padding: 0;
+}
+
+.workspace-dialog[open],
+.capability-dialog[open] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.workspace-dialog .capability-head,
+.workspace-dialog .workspace-tabs,
+.capability-dialog .capability-head { flex: none; }
+.workspace-dialog .workspace-content,
+.capability-dialog .capability-content {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  overflow: auto;
+}
+
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #75dcca;
+  outline-offset: 2px;
+}
+
+/* The 280px sidebar leaves less room than the viewport width suggests. Switch
+   to the two-row header before the action buttons begin squeezing vertically. */
+@media (max-width: 1450px) and (min-width: 961px) {
+  header {
+    height: auto;
+    min-height: 118px;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+    padding: 15px 24px;
+  }
+  .header-copy h1 { white-space: nowrap; }
+  .header-actions { align-items: end; justify-content: space-between; }
+}
+
+@media (max-width: 600px) {
+  header {
+    min-height: 0;
+    gap: 9px;
+    padding: 11px 14px;
+  }
+  .header-copy { min-width: 0; }
+  .header-copy h1 { margin-bottom: 3px; font-size: 17px; line-height: 1.25; white-space: normal; overflow-wrap: anywhere; }
+  .header-copy > p {
+    overflow: hidden;
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .agent-progress { margin-top: 5px; gap: 5px; font-size: 10px; }
+  .header-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: end;
+    gap: 7px;
+    width: 100%;
+  }
+}

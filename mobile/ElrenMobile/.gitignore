@@ -1,0 +1,9 @@
+# Android/Gradle machine-local and generated state
+.gradle/
+.gradle-*/
+.kotlin/
+.kotlin-*/
+build/
+app/build/
+local.properties
+*.iml

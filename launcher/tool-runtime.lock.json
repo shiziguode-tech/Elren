@@ -1,0 +1,199 @@
+{
+  "schema": 1,
+  "bundle": "elren-tool-runtime",
+  "product_version": "1.0",
+  "platform": "windows-x86_64",
+  "policy": {
+    "docker_required": false,
+    "duplicate_python_or_node": false,
+    "default_max_extracted_bytes": 681574400,
+    "download_sources": "upstream-project-or-upstream-endorsed-only",
+    "credentials_in_bundle": false
+  },
+  "profiles": {
+    "default": [
+      "jq",
+      "ripgrep",
+      "github-cli",
+      "ffmpeg-lgpl",
+      "xurl-binary",
+      "audiveris",
+      "node-cli-default"
+    ],
+    "extended": [
+      "jq",
+      "ripgrep",
+      "github-cli",
+      "ffmpeg-lgpl",
+      "xurl-binary",
+      "pandoc",
+      "mingit",
+      "audiveris",
+      "node-cli-extended"
+    ]
+  },
+  "artifacts": [
+    {
+      "id": "jq",
+      "version": "1.8.2",
+      "publisher": "jqlang/jq",
+      "source": "https://github.com/jqlang/jq",
+      "url": "https://github.com/jqlang/jq/releases/download/jq-1.8.2/jq-windows-amd64.exe",
+      "sha256": "a6fc67fedaf9128a3309a1e2ebb8b986aeccf70122ee46d2cb4849e423f0c627",
+      "archive": "file",
+      "install": [
+        {"source": "jq-windows-amd64.exe", "destination": "native/jq/jq.exe"}
+      ],
+      "license": "MIT",
+      "license_url": "https://raw.githubusercontent.com/jqlang/jq/jq-1.8.2/COPYING",
+      "license_sha256": "ad2b4a266b2268939c1446979759706077421cf906a203aa188c6f396e8cfd74"
+    },
+    {
+      "id": "ripgrep",
+      "version": "15.2.0",
+      "publisher": "BurntSushi/ripgrep",
+      "source": "https://github.com/BurntSushi/ripgrep",
+      "url": "https://github.com/BurntSushi/ripgrep/releases/download/15.2.0/ripgrep-15.2.0-x86_64-pc-windows-msvc.zip",
+      "sha256": "71b2fef860abe467217a538ff31de02f5258807c0129f771846f87bd029aafc5",
+      "archive": "zip",
+      "install": [
+        {"source": "*/rg.exe", "destination": "native/ripgrep/rg.exe"},
+        {"source": "*/COPYING", "destination": "licenses/ripgrep-COPYING"},
+        {"source": "*/LICENSE-MIT", "destination": "licenses/ripgrep-LICENSE-MIT"}
+      ],
+      "license": "Unlicense OR MIT"
+    },
+    {
+      "id": "github-cli",
+      "version": "2.97.0",
+      "publisher": "cli/cli",
+      "source": "https://github.com/cli/cli",
+      "url": "https://github.com/cli/cli/releases/download/v2.97.0/gh_2.97.0_windows_amd64.zip",
+      "sha256": "35d7fe05c4dd1411ffda1e73dfc7c6f44b75c936ca51fa6595c657fdc0350cec",
+      "archive": "zip",
+      "install": [
+        {"source": "*bin/gh.exe", "destination": "native/github-cli/gh.exe"},
+        {"source": "*LICENSE", "destination": "licenses/github-cli-LICENSE"}
+      ],
+      "license": "MIT"
+    },
+    {
+      "id": "ffmpeg-lgpl",
+      "version": "8.1.2-34-g9b6c8969e0+btbn-20260812",
+      "publisher": "BtbN/FFmpeg-Builds",
+      "source": "https://github.com/BtbN/FFmpeg-Builds",
+      "upstream_endorsement": "https://ffmpeg.org/download.html#build-windows",
+      "url": "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-08-12-13-15/ffmpeg-n8.1.2-34-g9b6c8969e0-win64-lgpl-shared-8.1.zip",
+      "sha256": "375df631ddf38bf38feb7bbd67259c454045b8ea75b96af62c33a440ba799f48",
+      "archive": "zip",
+      "install": [
+        {"source": "*/bin/*.exe", "destination": "native/ffmpeg/bin", "include_names": ["ffmpeg.exe", "ffprobe.exe"]},
+        {"source": "*/bin/*.dll", "destination": "native/ffmpeg/bin"},
+        {"source": "*/LICENSE.txt", "destination": "licenses/ffmpeg-LICENSE.txt"}
+      ],
+      "license": "LGPL-2.1-or-later",
+      "notes": "Pinned by SHA-256. FFmpeg's official download page endorses BtbN Windows builds. Shared LGPL build avoids duplicating libraries between ffmpeg and ffprobe."
+    },
+    {
+      "id": "pandoc",
+      "version": "3.10.2",
+      "publisher": "jgm/pandoc",
+      "source": "https://github.com/jgm/pandoc",
+      "url": "https://github.com/jgm/pandoc/releases/download/3.10.2/pandoc-3.10.2-windows-x86_64.zip",
+      "sha256": "52487faaa63f8cef5363d5a771097da001228d61c6f44f32ed41b27a98c0278c",
+      "archive": "zip",
+      "install": [
+        {"source": "*/pandoc.exe", "destination": "native/pandoc/pandoc.exe"},
+        {"source": "*/COPYING.md", "destination": "licenses/pandoc-COPYING.md"}
+      ],
+      "license": "GPL-2.0-or-later"
+    },
+    {
+      "id": "xurl-binary",
+      "version": "1.3.1",
+      "publisher": "xdevplatform/xurl",
+      "source": "https://github.com/xdevplatform/xurl",
+      "url": "https://github.com/xdevplatform/xurl/releases/download/v1.3.1/xurl_Windows_x86_64.zip",
+      "sha256": "6b5e7435daa98d03a620b2a31b8c78162601959a63274e945ae372c799073305",
+      "archive": "zip",
+      "install": [
+        {"source": "xurl.exe", "destination": "native/xurl/xurl.exe"},
+        {"source": "LICENSE", "destination": "licenses/xurl-LICENSE"}
+      ],
+      "license": "MIT"
+    },
+    {
+      "id": "mingit",
+      "version": "2.55.0.4",
+      "publisher": "git-for-windows/git",
+      "source": "https://github.com/git-for-windows/git",
+      "url": "https://github.com/git-for-windows/git/releases/download/v2.55.0.windows.4/MinGit-2.55.0.4-64-bit.zip",
+      "sha256": "4e03f94c2ffbf70be337e005cee02661c732dbfc81031a078bda9299b9a7d644",
+      "archive": "zip-tree",
+      "destination": "native/mingit",
+      "license": "GPL-2.0-only"
+    }
+  ],
+  "node": {
+    "runtime": "../node-runtime/node.exe",
+    "package_manager": "../node-runtime/npm.cmd",
+    "default_packages": {
+      "mcporter": {
+        "version": "0.13.4",
+        "integrity": "sha512-pL+mDXVKnBvM5tXOEp/kbIUJn1UN2zbevFXy1NFvtLBOO+24Eqmw+0urWHzZfIFcUCN2YGLsrfh/tRxTuVxXgQ==",
+        "bin": {"mcporter": "dist/cli.js"}
+      },
+      "@xdevplatform/xurl": {
+        "version": "1.3.1",
+        "integrity": "sha512-XhNWx6t0LyoZqMXPeqYtbrl5BItLCK26dwnii+rxTI4mvsxkZbhPO1B2l8QKLaUMR5aQnqGw5bFQo52dJ1Jppg==",
+        "bin": {"xurl": "cli.js"}
+      }
+    },
+    "extended_packages": {
+      "@google/gemini-cli": {
+        "version": "0.55.1",
+        "integrity": "sha512-leEv91V7J3YWhZdXqYIj4nTl0hXl8oNos5aVR0whPCFqVbRvoFPTzaQOHdI2UIT1wGgp+XdCi4qUrFDnUFN7RQ==",
+        "bin": {"gemini": "bundle/gemini.js"}
+      },
+      "ntn": {
+        "version": "0.21.11",
+        "integrity": "sha512-6w0BoGGGrMuDIk1BgSfrO9TER2c8pGjTCE/44kMAiJks2kg5C/dBbfBcxfB2NM8BUK0fDjpNAa+M+Cf7Dw1W8w==",
+        "bin": {"ntn": "bin/ntn"}
+      },
+      "@steipete/oracle": {
+        "version": "0.17.2",
+        "integrity": "sha512-Y2I/sTML2YPZrmYaw1QbpNd7bt6so9ld1pTjRP/MiEKTWanYjoICkmCpWBplPXq+KzHiVsgyPqUZpwxxOpa2Jg==",
+        "bin": {"oracle": "dist/bin/oracle-cli.js", "oracle-mcp": "dist/bin/oracle-mcp.js"}
+      },
+      "@openai/codex": {
+        "version": "0.147.0",
+        "integrity": "sha512-EQLEXecAG2ptxI7UpBMo2TR/ga5596/c/OsYF/0LoUDh5JANZ7IoGqlzBEWbuEVQ76JePIbtTW/ihCkp1a7Z3w==",
+        "bin": {"codex": "bin/codex.js"}
+      },
+      "@anthropic-ai/claude-code": {
+        "version": "2.1.229",
+        "integrity": "sha512-6HNg2iBe5DFvOxxdWTxdVaxg7buVvZMEpa+etJp3acBNatXXGdMBbqd3xjgPvqAoCz2ifQ/n5HSBd+xY8RBKfw==",
+        "bin": {"claude": "bin/claude.exe"}
+      }
+    }
+  },
+  "shim_allowlist": [
+    "jq",
+    "rg",
+    "gh",
+    "ffmpeg",
+    "ffprobe",
+    "python3",
+    "curl",
+    "pandoc",
+    "git",
+    "mcporter",
+    "xurl",
+    "gemini",
+    "ntn",
+    "oracle",
+    "oracle-mcp",
+    "codex",
+    "claude"
+  ]
+}

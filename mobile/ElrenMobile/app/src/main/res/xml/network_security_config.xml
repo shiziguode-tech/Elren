@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- LAN discovery uses HTTP/WebSocket transport; every application payload is
+         independently authenticated and encrypted with AES-256-GCM. -->
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

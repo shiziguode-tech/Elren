@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Elren</title>
+  <link rel="icon" type="image/png" href="/static/elren-icon.png?v=2" />
+  <script src="/static/theme-init.js?v=10"></script>
+  <link rel="stylesheet" href="/static/style.css?v=4" />
+  <link rel="stylesheet" href="/static/font.css?v=2" />
+  <link rel="stylesheet" href="/static/human-action.css?v=3" />
+  <link rel="stylesheet" href="/static/scroll-fix.css?v=2" />
+  <link rel="stylesheet" href="/static/history.css?v=33" />
+  <link rel="stylesheet" href="/static/agent-progress.css?v=1" />
+  <link rel="stylesheet" href="/static/trace-view.css?v=10" />
+  <link rel="stylesheet" href="/static/composer-controls.css?v=2" />
+  <link rel="stylesheet" href="/static/theme.css?v=19" />
+  <link rel="stylesheet" href="/static/professional-ui.css?v=62" />
+  <link rel="stylesheet" href="/static/voice.css?v=21" />
+  <link rel="stylesheet" href="/static/editorial-ui.css?v=39" />
+  <link rel="stylesheet" href="/static/vendor/katex/katex.min.css?v=1" />
+  <link rel="stylesheet" href="/static/vendor/air-datepicker/air-datepicker.css?v=3.6.0" />
+</head>
+<body>
+  <div id="desktopControlStatus" class="desktop-control-status" role="group" aria-labelledby="desktopControlStatusText" aria-hidden="true" popover="manual" hidden>
+    <span class="desktop-control-status-icon" aria-hidden="true"><span class="app-symbol app-symbol-pointer"></span></span>
+    <strong id="desktopControlStatusText" role="status" aria-live="polite" aria-atomic="true">正在控制电脑，按 Esc 强制退出</strong>
+    <button id="desktopControlStop" type="button" aria-label="立即停止电脑控制" title="立即停止电脑控制">
+      <span class="app-symbol app-symbol-stop" aria-hidden="true"></span>
+    </button>
+  </div>
+  <div class="shell">
+    <button id="navOverlay" class="nav-overlay" type="button" aria-label="关闭侧栏"></button>
+    <aside id="taskSidebar">
+      <div class="brand"><div class="mark"><img src="/static/elren-icon.png?v=2" alt="" /></div><div><strong id="brandName">Elren</strong><span id="brandTagline">本地电脑代理</span></div></div>
+      <button id="newTask" class="new"><span aria-hidden="true">＋</span> <span id="newTaskLabel">新任务</span></button>
+      <nav class="primary-nav" aria-label="主要功能">
+        <button id="navChats" type="button"><span class="app-symbol app-symbol-message-square" aria-hidden="true"></span><span>聊天</span></button>
+        <button id="navPlugins" type="button"><span class="app-symbol app-symbol-blocks" aria-hidden="true"></span><span>插件</span></button>
+      </nav>
+      <div class="section-label history-heading"><span>全部任务</span><span id="historyCount" role="status" aria-live="polite" aria-atomic="true">0</span></div>
+      <div class="history-controls" role="search" aria-label="筛选全部任务">
+        <input id="historySearch" type="search" placeholder="搜索任务…" autocomplete="off" aria-label="搜索任务" />
+        <select id="historyStatus" aria-label="按状态筛选任务">
+          <option value="">全部状态</option>
+          <option value="running">运行中</option>
+          <option value="waiting_approval">确认中</option>
+          <option value="waiting_user">待用户操作</option>
+          <option value="completed">已完成</option>
+          <option value="failed">失败</option>
+          <option value="cancelled">已停止</option>
+        </select>
+      </div>
+      <div id="taskHistory" class="task-history" role="region" aria-label="全部任务"><div class="history-empty">正在读取…</div></div>
+      <button id="historyMore" class="history-more hidden" type="button">加载更多</button>
+    </aside>
+    <div class="runtime-bridge" hidden aria-hidden="true">
+      <span class="dot" id="apiDot"></span><span id="apiText">正在连接…</span>
+      <span id="modelText">—</span><span id="workspaceText">—</span><span id="openclawText">OpenClaw：检查中</span>
+      <button id="openCapabilities" type="button">能力地图</button>
+      <span id="tools"></span>
+    </div>
+    <div id="sidebarResizer" class="sidebar-resizer" role="separator" aria-orientation="vertical" aria-label="调整侧栏宽度" title="拖动以调整左侧聊天栏宽度" aria-valuemin="236" tabindex="0"></div>
+    <main>
+      <header>
+        <div class="header-copy">
+          <div class="header-title-row">
+            <button id="mobileNav" class="mobile-nav" aria-label="打开侧栏" aria-controls="taskSidebar" aria-expanded="false"><span class="app-symbol app-symbol-menu" aria-hidden="true"></span></button>
+            <h1 id="conversationTitle">新任务</h1>
+          </div>
+          <div class="header-status-row">
+            <div id="agentProgress" class="agent-progress hidden" role="status" aria-live="polite" aria-atomic="true"></div>
+            <div id="activeModelBadge" class="active-model-badge hidden" role="status" aria-live="polite"></div>
+            <div id="contextUsageBadge" class="context-usage-badge hidden" role="status" aria-live="polite"></div>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button id="toggleSubagents" class="header-subagent-button settings-icon-button" type="button" hidden aria-expanded="false" aria-controls="subagentPanel" aria-haspopup="dialog" aria-label="打开子智能体" title="打开子智能体"><span class="app-symbol app-symbol-list-filter" aria-hidden="true"></span><span id="subagentActivityDot" class="subagent-activity-dot" aria-hidden="true"></span></button>
+          <button id="toggleArtifactInspector" class="header-artifact-button settings-icon-button" type="button" hidden aria-expanded="false" aria-controls="artifactInspector" aria-label="打开产物检查器" title="打开产物检查器"><span class="app-symbol app-symbol-folder" aria-hidden="true"></span></button>
+          <button id="openSettings" class="header-settings-button settings-icon-button" type="button" aria-label="设置" title="设置"><span class="settings-icon" aria-hidden="true"></span></button>
+          <button id="languageToggle" class="language-toggle" type="button" aria-label="切换语言" title="切换语言"><span class="language-icon" aria-hidden="true"><span class="language-glyph-zh">文</span><span class="language-glyph-en">A</span></span><span class="language-icon-label">切换语言</span></button>
+        </div>
+      </header>
+      <section id="subagentPanel" class="subagent-panel" popover="auto" role="dialog" aria-labelledby="subagentPanelTitle" aria-describedby="subagentSummary">
+        <header class="subagent-panel-header">
+          <div>
+            <span class="subagent-panel-kicker">任务分工</span>
+            <h2 id="subagentPanelTitle">子智能体</h2>
+          </div>
+          <button id="closeSubagentPanel" type="button" aria-label="关闭子智能体"><span class="app-symbol app-symbol-close" aria-hidden="true"></span></button>
+        </header>
+        <div class="subagent-panel-overview">
+          <div id="subagentAvatarStrip" class="subagent-avatar-strip" aria-hidden="true"></div>
+          <p id="subagentSummary" role="status" aria-live="polite" aria-atomic="true"></p>
+        </div>
+        <div id="subagentList" class="subagent-list" role="list"></div>
+      </section>
+      <section id="welcome" class="welcome">
+        <div class="orb"><img src="/static/elren-icon.png?v=2" alt="" /></div>
+        <h2>今天想在项目里完成什么？</h2>
+        <p>选择代码项目，让 Elren 理解代码、修复问题、运行测试并解释改动。也可以直接开始通用任务。</p>
+      </section>
+      <section id="timeline" class="timeline hidden" aria-label="任务过程"></section>
+      <section id="taskApproval" class="human-action hidden" role="region" aria-labelledby="taskApprovalTitle" aria-live="polite">
+        <div class="human-action-copy">
+          <strong id="taskApprovalTitle">此操作需要你确认</strong>
+          <p id="taskApprovalSummary"></p>
+          <details open><summary id="taskApprovalDetailsLabel">查看操作参数</summary><pre id="taskApprovalArguments"></pre></details>
+        </div>
+        <div class="human-action-actions">
+          <button id="confirmTaskApproval" type="button">仅允许这一次</button>
+          <button id="rejectTaskApproval" type="button">拒绝此操作</button>
+        </div>
+      </section>
+      <div id="humanAction" class="human-action hidden" role="dialog" aria-labelledby="humanActionTitle" aria-live="assertive">
+        <div class="human-action-icon"><span class="app-symbol app-symbol-hand" aria-hidden="true"></span></div>
+        <div class="human-action-copy">
+          <strong id="humanActionTitle">需要你接管操作</strong>
+          <span id="humanActionSummary"></span>
+          <p id="humanActionInstructions"></p>
+          <div class="human-target-grid">
+            <div><small>应用 / 网页</small><b id="humanActionTargetApp">未指定</b></div>
+            <div><small>具体界面</small><b id="humanActionTargetPage">未指定</b></div>
+            <div class="wide"><small>需要完成</small><b id="humanActionTargetTask">请按上方步骤操作</b></div>
+          </div>
+        </div>
+        <div class="human-action-actions">
+          <button id="takeOverHumanAction" type="button">接管操作</button>
+          <button id="completeHumanAction" type="button" disabled>我已操作完成，可以继续</button>
+          <button id="cancelHumanAction" type="button" disabled>出现问题，未能成功操作</button>
+        </div>
+      </div>
+      <section id="artifactInspector" class="artifact-inspector hidden" aria-labelledby="artifactInspectorTitle" hidden>
+        <header class="artifact-inspector-header">
+          <div>
+            <span class="artifact-inspector-kicker">任务产物</span>
+            <h2 id="artifactInspectorTitle">产物检查器</h2>
+          </div>
+          <button id="closeArtifactInspector" type="button" aria-label="关闭产物检查器"><span class="app-symbol app-symbol-close" aria-hidden="true"></span></button>
+        </header>
+        <nav class="artifact-inspector-tabs" role="tablist" aria-label="产物检查器页面">
+          <button id="artifactInspectorPreviewTab" type="button" role="tab" aria-selected="true" aria-controls="artifactInspectorPreviewPanel">预览</button>
+          <button id="artifactInspectorSourceTab" type="button" role="tab" aria-selected="false" aria-controls="artifactInspectorSourcePanel" tabindex="-1">来源</button>
+          <button id="artifactInspectorChecksTab" type="button" role="tab" aria-selected="false" aria-controls="artifactInspectorChecksPanel" tabindex="-1">检查</button>
+        </nav>
+        <div class="artifact-inspector-panels">
+          <section id="artifactInspectorPreviewPanel" role="tabpanel" aria-labelledby="artifactInspectorPreviewTab"><div id="artifactInspectorPreviewMount" class="artifact-inspector-mount"></div></section>
+          <section id="artifactInspectorSourcePanel" role="tabpanel" aria-labelledby="artifactInspectorSourceTab" hidden><div id="artifactInspectorSourceMount" class="artifact-inspector-mount"></div></section>
+          <section id="artifactInspectorChecksPanel" role="tabpanel" aria-labelledby="artifactInspectorChecksTab" hidden><div id="artifactInspectorChecksMount" class="artifact-inspector-mount"></div></section>
+        </div>
+      </section>
+      <footer>
+        <div class="composer">
+          <textarea id="prompt" rows="2" aria-label="输入任务要求" placeholder="描述你想完成的任务…"></textarea>
+          <button id="send" type="button" title="开始任务" aria-label="开始任务" data-action="send"><span class="app-symbol app-symbol-send" aria-hidden="true"></span></button>
+        </div>
+        <div class="composer-tools">
+          <button id="stopWaitingTask" class="upload-file" type="button" hidden>停止任务</button>
+          <div class="model-picker"><span id="modelPickerLabel">回答模型</span>
+            <span class="model-select-shell">
+              <select id="modelPreference" class="native-model-select" tabindex="-1" aria-hidden="true">
+                <option value="auto" selected>自动</option>
+                <option value="deepseek-v4-flash">deepseek-v4-flash</option>
+                <option value="deepseek-v4-pro">deepseek-v4-pro</option>
+                <option value="deepseek-v4-flash-vision-exp">deepseek-v4-flash-vision-exp</option>
+              </select>
+              <button id="modelPreferenceButton" class="model-select-button" type="button" aria-labelledby="modelPickerLabel modelPreferenceValue" aria-haspopup="listbox" aria-expanded="false" aria-controls="modelPreferenceMenu">
+                <span id="modelPreferenceValue" class="model-select-value">自动</span>
+                <span class="model-select-chevron" aria-hidden="true"></span>
+              </button>
+              <span id="modelPreferenceMenu" class="model-select-menu" role="listbox" tabindex="-1" hidden></span>
+            </span>
+          </div>
+          <div class="reasoning-picker" aria-label="思考深度" hidden>
+            <div class="reasoning-picker-head"><span id="reasoningPickerLabel">思考深度</span><output id="reasoningPreferenceLabel" for="reasoningPreference">自动</output><span class="reasoning-bolt app-symbol app-symbol-bolt" aria-hidden="true"></span></div>
+            <div class="reasoning-slider-wrap">
+              <input id="reasoningPreference" type="range" min="0" max="0" step="1" value="0" aria-label="思考深度：自动" disabled>
+              <div class="reasoning-dots" aria-hidden="true"><i></i></div>
+              <span class="reasoning-thumb-mask" aria-hidden="true"></span>
+            </div>
+          </div>
+          <div class="composer-icon-actions" role="group" aria-label="附件与语音">
+            <button id="uploadFile" class="upload-file composer-icon-button" type="button" title="上传文件" aria-label="上传文件"><span class="app-symbol app-symbol-folder" aria-hidden="true"></span></button>
+            <button id="voiceConversation" class="voice-conversation composer-icon-button" type="button" aria-pressed="false" title="语音对话" aria-label="打开语音对话"><span class="app-symbol app-symbol-mic" aria-hidden="true"></span></button>
+          </div>
+          <input id="fileInput" type="file" multiple hidden accept=".png,.jpg,.jpeg,.webp,.gif,.bmp,.tif,.tiff,.pdf,.doc,.docx,.xlsx,.xls,.csv,.tsv,.ppt,.pptx,.txt,.md,.json,.jsonl,.html,.xml,.yaml,.yml,.py,.js,.ts,.tsx,.jsx,.java,.c,.cpp,.h,.cs,.go,.rs,.sql,.ps1,.sh,.mp3,.wav,.flac,.m4a,.aac,.ogg,.opus,.mp4,.webm,.mov,.mkv,image/*,audio/*,video/*" />
+        </div>
+        <div id="attachmentList" class="attachment-list hidden" aria-live="polite"></div>
+      </footer>
+    </main>
+  </div>
+  <div id="taskContextMenu" class="task-context-menu hidden" role="menu" aria-hidden="true">
+    <button id="pinTaskContextAction" type="button" role="menuitem">置顶聊天</button>
+    <button id="renameTaskContextAction" type="button" role="menuitem">重命名</button>
+    <a id="exportTaskMarkdown" role="menuitem" target="_blank" rel="noopener" download>导出对话（Markdown）</a>
+    <a id="exportTaskJson" role="menuitem" target="_blank" rel="noopener" download>导出对话（JSON）</a>
+    <button id="deleteTaskContextAction" class="danger-menu-action" type="button" role="menuitem">删除此聊天</button>
+  </div>
+  <dialog id="confirmDialog" class="confirm-dialog" aria-labelledby="confirmDialogTitle" aria-describedby="confirmDialogMessage">
+    <div class="confirm-dialog-head">
+      <span id="confirmDialogKicker">需要确认</span>
+      <button id="closeConfirmDialog" type="button" aria-label="关闭确认弹窗"><span class="app-symbol app-symbol-close" aria-hidden="true"></span></button>
+    </div>
+    <div class="confirm-dialog-body">
+      <h2 id="confirmDialogTitle">确认操作</h2>
+      <p id="confirmDialogMessage"></p>
+    </div>
+    <div class="confirm-dialog-actions">
+      <button id="cancelConfirmDialog" type="button">取消</button>
+      <button id="acceptConfirmDialog" type="button" class="confirm-primary">确认</button>
+    </div>
+  </dialog>
+  <dialog id="renameTaskDialog" class="confirm-dialog rename-task-dialog" aria-labelledby="renameTaskDialogTitle">
+    <form id="renameTaskForm" method="dialog">
+      <div class="confirm-dialog-head">
+        <span id="renameTaskDialogKicker">聊天名称</span>
+        <button id="closeRenameTaskDialog" type="button" aria-label="关闭重命名弹窗"><span class="app-symbol app-symbol-close" aria-hidden="true"></span></button>
+      </div>
+      <div class="confirm-dialog-body">
+        <h2 id="renameTaskDialogTitle">重命名聊天</h2>
+        <label for="renameTaskInput">新名称</label>
+        <input id="renameTaskInput" maxlength="60" autocomplete="off" required>
+        <small id="renameTaskHint">名称仅用于任务列表，不会改变聊天内容。</small>
+      </div>
+      <div class="confirm-dialog-actions">
+        <button id="cancelRenameTask" type="button">取消</button>
+        <button id="saveRenameTask" type="submit" class="confirm-primary">保存</button>
+      </div>
+    </form>
+  </dialog>
+  <dialog id="capabilityDialog" class="capability-dialog" aria-labelledby="capabilityDialogTitle">
+    <div class="capability-head">
+      <div><p class="capability-kicker"><span>运行时诊断</span></p><h2 id="capabilityDialogTitle">能力地图</h2></div>
+      <button id="closeCapabilities" aria-label="关闭能力地图"><span class="app-symbol app-symbol-close" aria-hidden="true"></span></button>
+    </div>
+    <div id="capabilityContent" class="capability-content" role="region" aria-labelledby="capabilityDialogTitle">正在读取真实工具目录…</div>
+  </dialog>
+  <dialog id="workspaceDialog" class="workspace-dialog" aria-labelledby="workspaceDialogTitle">
+    <div class="capability-head">
+      <div><span>Elren 控制台</span><h2 id="workspaceDialogTitle">产物</h2></div>
+      <button id="closeWorkspaceDialog" aria-label="关闭控制台"><span class="app-symbol app-symbol-close" aria-hidden="true"></span></button>
+    </div>
+    <nav class="workspace-tabs" role="tablist" aria-label="控制台页面">
+      <button id="workspaceTabSettings" type="button" role="tab" data-panel="settings" aria-controls="panel-settings" aria-selected="false" tabindex="-1">设置</button>
+      <button id="workspaceTabArtifacts" type="button" role="tab" data-panel="artifacts" class="active" aria-controls="panel-artifacts" aria-selected="true">产物</button>
+      <button id="workspaceTabSchedules" type="button" role="tab" data-panel="schedules" aria-controls="panel-schedules" aria-selected="false" tabindex="-1">定时任务</button>
+    </nav>
+    <nav id="settingsSectionNav" class="settings-section-nav" aria-label="设置分类" hidden>
+      <div class="settings-section-tabs" role="list">
+        <button type="button" data-settings-target="general" class="active">常规</button>
+        <button type="button" data-settings-target="team">讨论团</button>
+        <button type="button" data-settings-target="providers">模型与密钥</button>
+        <button type="button" data-settings-target="channels">远程渠道</button>
+        <button type="button" data-settings-target="voice">语音</button>
+        <button type="button" data-settings-target="runtime">运行环境</button>
+      </div>
+      <button id="settingsTabsMore" class="settings-tabs-more" type="button" hidden>更多 ›</button>
+      <label class="settings-search" for="settingsSearch">
+        <span class="settings-search-icon" aria-hidden="true"></span>
+        <input id="settingsSearch" type="search" placeholder="搜索设置" autocomplete="off" aria-label="搜索设置" />
+      </label>
+    </nav>
+    <div class="workspace-content">
+      <section id="panel-artifacts" class="workspace-panel active" role="tabpanel" aria-labelledby="workspaceTabArtifacts" aria-hidden="false">
+        <div class="panel-toolbar"><div><b>任务产物</b><span>统一保存在 outputs/，可直接下载</span></div><button id="refreshArtifacts">刷新</button></div>
+        <div class="artifact-controls" role="search" aria-label="筛选任务产物">
+          <input id="artifactSearch" type="search" placeholder="搜索文件或文件夹…" autocomplete="off" aria-label="搜索任务产物" />
+          <select id="artifactType" aria-label="按类型筛选产物">
+            <option value="">全部类型</option>
+            <option value="folder">文件夹</option>
+            <option value="document">文档</option>
+            <option value="image">图片</option>
+            <option value="video">视频</option>
+            <option value="audio">音频</option>
+            <option value="code">代码</option>
+            <option value="other">其他</option>
+          </select>
+        </div>
+        <div id="artifactList" class="artifact-list"><div class="panel-empty">正在读取…</div></div>
+      </section>
+      <section id="panel-schedules" class="workspace-panel" role="tabpanel" aria-labelledby="workspaceTabSchedules" aria-hidden="true">
+        <form id="scheduleForm" class="schedule-form">
+          <div class="form-grid">
+            <label>任务名称<input id="scheduleName" required maxlength="120" placeholder="例如：每日工作摘要"></label>
+            <label>执行方式<select id="scheduleKind"><option value="daily">每天执行</option><option value="interval">按间隔重复</option><option value="at">仅执行一次</option></select></label>
+            <label>开始执行时间<span class="datetime-input-shell"><input id="scheduleStartAt" type="text" data-local-datetime autocomplete="off" placeholder="YYYY-MM-DD HH:mm" maxlength="16" required></span></label>
+            <div id="scheduleIntervalField" class="schedule-interval-field hidden"><span>每隔</span><input id="scheduleIntervalValue" type="number" min="1" max="365" value="1" aria-label="执行间隔"><select id="scheduleIntervalUnit" aria-label="间隔单位"><option value="60">分钟</option><option value="3600" selected>小时</option><option value="86400">天</option></select><span>执行一次</span></div>
+            <label id="scheduleEndField">结束时间（可选）<span class="datetime-input-shell"><input id="scheduleEndAt" type="text" data-local-datetime autocomplete="off" placeholder="YYYY-MM-DD HH:mm" maxlength="16"></span></label>
+            <label class="wide">执行内容<textarea id="schedulePrompt" required rows="3" placeholder="写清楚到点后需要智能体完成什么"></textarea></label>
+          </div>
+          <div class="form-actions"><span>每天或重复任务可设置结束时间；留空表示持续执行，单次任务执行后自动结束。</span><button type="submit">创建定时任务</button></div>
+        </form>
+        <div id="scheduleList" class="schedule-list"><div class="panel-empty">正在读取…</div></div>
+      </section>
+      <section id="panel-settings" class="workspace-panel" role="tabpanel" aria-labelledby="workspaceTabSettings" aria-hidden="true">
+        <form id="settingsForm" class="settings-form">
+          <div class="form-grid">
+            <label class="model-setting">默认模型<select id="settingModel"><option value="deepseek-v4-flash">V4 Flash（默认）</option><option value="deepseek-v4-pro">V4 Pro（能力优先）</option><option value="deepseek-v4-flash-vision-exp">deepseek-v4-flash-vision-exp</option></select></label>
+            <label class="reasoning-setting">默认思考深度<select id="settingReasoningEffort"><option value="auto">模型自动决定</option><option value="minimal">最低</option><option value="low">低（更快）</option><option value="medium">中（均衡）</option><option value="high" selected>高（推荐）</option><option value="xhigh">极高</option><option value="max">最高（最慢）</option></select><small>只显示所选模型经官方 API 验证的原生档位；未知或不支持的模型不会用系统提示词模拟推理强度。</small></label>
+            <div class="settings-field provider-keys-setting">
+              <span>供应商密钥</span>
+              <label>DeepSeek 主密钥<input id="settingDeepSeekKey" type="password" autocomplete="new-password" placeholder="已配置则留空保持不变"></label>
+              <label>DeepSeek 备用密钥（可选）<input id="settingDeepSeekBackupKey" type="password" autocomplete="new-password" placeholder="可留空"></label>
+              <label>Gemini 免费密钥（可选）<input id="settingGeminiKey" type="password" autocomplete="new-password" placeholder="可留空"></label>
+              <label>Pollinations 免费媒体密钥（可选）<input id="settingPollinationsKey" type="password" autocomplete="new-password" placeholder="用于免费档图片、视频和音乐生成"></label>
+              <label>Hugging Face 免费只读令牌（可选）<input id="settingHuggingFaceToken" type="password" autocomplete="new-password" placeholder="hf_…；提升 ZeroGPU 每日免费额度"></label>
+              <small>密钥保存在本机操作系统保护的加密保险库中，不会以明文写入 JSON，也不会回显；留空不会覆盖现有密钥。</small>
+            </div>
+            <div class="settings-field aicodemirror-setting">
+              <span>AI Code Mirror 中转站</span>
+              <p>注册网址：<a href="https://www.aicodemirror.ai/" target="_blank" rel="noopener noreferrer">www.aicodemirror.ai</a></p>
+              <label>
+                <span class="secret-label-copy"><span id="settingAicodemirrorKeyLabel">通用 API 密钥</span><strong id="settingAicodemirrorKeyStatus" class="secret-config-status">未配置</strong></span>
+                <input id="settingAicodemirrorKey" type="password" autocomplete="new-password" placeholder="输入通用中转密钥">
+              </label>
+              <label>
+                <span class="secret-label-copy"><span><a href="https://www.aicodemirror.ai/" target="_blank" rel="noopener noreferrer">AICodeMirror</a> <span id="settingAicodemirrorFableKeyLabel">Fable 专用密钥</span></span><strong id="settingAicodemirrorFableKeyStatus" class="secret-config-status">未配置</strong></span>
+                <input id="settingAicodemirrorFableKey" type="password" autocomplete="new-password" placeholder="仅用于 Fable 模型">
+              </label>
+              <small id="settingAicodemirrorFableKeyHelp">Fable 模型需要在关闭智能路由的情况下，使用“官方渠道”或“官方渠道稳定”的密钥，并将其单独填入 Elren 的 Fable 专用密钥处后才能访问。</small>
+              <small id="settingAicodemirrorGeneralHelp">通用密钥启用其他 Claude、OpenAI 与 Gemini 模型；Fable 专用密钥只用于 claude-fable-5 和 claude-fable-5-1，二者不会回退使用通用密钥。留空不会覆盖已保存的密钥。</small>
+            </div>
+            <div class="settings-field model-providers-setting">
+              <span>第三方兼容接口</span>
+              <div id="modelProviderRows" class="model-provider-rows"></div>
+              <button id="addModelProvider" class="add-model-provider" type="button">＋ 添加第三方接口</button>
+              <small>可连接兼容所选协议的任意第三方网站，不限 OpenAI 或 Anthropic 官网。填写第三方 HTTPS API 基础网址（含 /v1 或其自定义路径）、精确模型名和密钥。仅填域名时使用 /v1。已有直连配置保留；DeepSeek 使用上方独立的主密钥和备用密钥。</small>
+            </div>
+            <div class="settings-field tool-credentials-setting">
+              <span>工具与 Skill 密钥（可选）</span>
+              <label>GitHub Token<input id="settingGithubToken" type="password" autocomplete="new-password" placeholder="用于 github、gh-issues"></label>
+              <label>Google Places API Key<input id="settingGooglePlacesKey" type="password" autocomplete="new-password" placeholder="用于 goplaces"></label>
+              <label>Trello API Key<input id="settingTrelloApiKey" type="password" autocomplete="new-password" placeholder="用于 trello"></label>
+              <label>Trello Token<input id="settingTrelloToken" type="password" autocomplete="new-password" placeholder="与 Trello API Key 配套"></label>
+              <label>ElevenLabs API Key<input id="settingElevenLabsKey" type="password" autocomplete="new-password" placeholder="用于 sag 语音"></label>
+              <label>Notion Token<input id="settingNotionToken" type="password" autocomplete="new-password" placeholder="用于 notion"></label>
+              <label>Spotify Client ID<input id="settingSpotifyClientId" type="password" autocomplete="new-password" placeholder="用于 sonoscli 的可选 Spotify 搜索"></label>
+              <label>Spotify Client Secret<input id="settingSpotifyClientSecret" type="password" autocomplete="new-password" placeholder="与 Spotify Client ID 配套"></label>
+              <details class="tool-credentials-extra">
+                <summary>更多可选集成密钥</summary>
+                <div>
+                  <label>1Password Service Account Token<input id="settingOpServiceToken" type="password" autocomplete="new-password" placeholder="用于 1password"></label>
+                  <label>GIPHY API Key<input id="settingGiphyKey" type="password" autocomplete="new-password" placeholder="用于 gifgrep"></label>
+                  <label>Tenor API Key<input id="settingTenorKey" type="password" autocomplete="new-password" placeholder="gifgrep 可选"></label>
+                  <label>Apify API Token<input id="settingApifyToken" type="password" autocomplete="new-password" placeholder="summarize 的 YouTube 备用"></label>
+                  <label>Firecrawl API Key<input id="settingFirecrawlKey" type="password" autocomplete="new-password" placeholder="summarize 的受限网页备用"></label>
+                  <label>Eight Sleep Email<input id="settingEightctlEmail" type="email" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="用于 eightctl"></label>
+                  <label>Eight Sleep Password<input id="settingEightctlPassword" type="password" autocomplete="new-password" placeholder="用于 eightctl"></label>
+                  <label>Deliveroo Bearer Token<input id="settingDeliverooToken" type="password" autocomplete="new-password" placeholder="用于 ordercli"></label>
+                  <label>Deliveroo Cookie（可选）<input id="settingDeliverooCookie" type="password" autocomplete="new-password" placeholder="ordercli 可选"></label>
+                  <label>Things Auth Token<input id="settingThingsToken" type="password" autocomplete="new-password" placeholder="用于 things-mac"></label>
+                  <label>SAG API Key（可选）<input id="settingSagKey" type="password" autocomplete="new-password" placeholder="sag 的 ElevenLabs 备用"></label>
+                </div>
+                <small>Bear Notes 的 Grizzly 只支持令牌文件路径，Sherpa TTS 只支持本机运行时/模型目录；这两类宿主绑定配置不会作为明文密钥存入此处。summarize 的 xAI 能力复用上方 xAI 模型供应商密钥。</small>
+              </details>
+              <small>密钥只写入本机，API 仅返回“已配置”状态。运行某个 Skill 时，只注入其白名单变量；第三方接口密钥不会作为官方 OpenAI、Claude 或 Gemini 密钥传给其他工具。</small>
+            </div>
+            <div class="settings-field feishu-setting">
+              <span>飞书可选渠道</span>
+              <label>App ID<input id="settingFeishuAppId" type="text" autocomplete="off" placeholder="可留空"></label>
+              <label>App Secret<input id="settingFeishuAppSecret" type="password" autocomplete="new-password" placeholder="可留空"></label>
+              <label>Open ID（默认收件人）<input id="settingFeishuOpenId" type="text" autocomplete="off" placeholder="例如 ou_xxx"></label>
+              <small>App ID 和 App Secret 用于官方长连接；Open ID 用作智能体主动发送消息时的默认收件人。</small>
+            </div>
+            <div class="settings-field telegram-setting">
+              <span>Telegram 可选渠道</span>
+              <label>Bot Token<input id="settingTelegramBotToken" type="password" autocomplete="new-password" placeholder="从 BotFather 获取"></label>
+              <label>默认 Chat ID（可选）<input id="settingTelegramChatId" type="text" autocomplete="off" placeholder="收到首条消息后自动记录"></label>
+              <small>机器人通过官方长轮询接收文字、图片、音频、视频和文档；Chat ID 会在用户首次给机器人发消息后自动记录。</small>
+            </div>
+            <div class="settings-field mobile-setting">
+              <span>Android 手机控制</span>
+              <div class="mobile-setting-head">
+                <p id="mobileSettingSummary">尚未绑定手机</p>
+                <button id="pairMobileDevice" class="mobile-pair-button" type="button">绑定 Android 手机</button>
+              </div>
+              <div id="mobileDeviceList" class="mobile-device-list"><small>打开本页后会读取设备状态。</small></div>
+              <small>手机与电脑连接同一局域网后，用手机端 Elren 扫描二维码。任务选择“自主”时，已绑定手机的普通操作无需 Elren 审批；Android 系统授权、生物识别、验证码、支付及安全设置仍必须由用户本人完成。</small>
+            </div>
+            <div class="settings-field">
+              <span>单次模型输出上限（token）</span>
+              <label class="settings-checkbox"><input id="settingAutoOutputTokens" type="checkbox">自动使用供应商上限（默认）</label>
+              <input id="settingMaxOutputTokens" type="number" min="1024" max="384000" step="1024" value="384000" aria-label="单次模型输出 token 上限">
+              <small>包含隐藏推理、正文和工具调用。自动模式明确使用 DeepSeek V4 的 384000 上限；回复仍可提前结束。</small>
+            </div>
+            <label>请求超时（秒）<input id="settingTimeout" type="number" min="10" max="600"></label>
+            <div class="settings-field cross-context-setting">
+              <span>跨对话上下文</span>
+              <label class="settings-checkbox"><input id="settingCrossConversationContext" type="checkbox" checked>新任务可参考全部相关对话</label>
+              <small>仅通用任务检索已完成的相关对话，较早内容权重更低。项目任务只使用本对话历史，不跨项目引用；不会带入工具日志或密钥。</small>
+            </div>
+            <div class="settings-field custom-system-prompt-setting">
+              <span>系统提示词追加内容</span>
+              <label>追加到内置系统提示词末尾<textarea id="settingCustomSystemPromptSuffix" rows="6" maxlength="20000" placeholder="例如：回答代码问题时，先给出可运行示例，再说明关键设计取舍。"></textarea></label>
+              <small>选填。保存后会原样追加到每个新任务的系统提示词末尾；不会覆盖 Elren 的内置提示词。清空并保存即可移除。</small>
+            </div>
+            <div class="settings-field discussion-team-setting">
+              <div class="discussion-team-heading">
+                <div><span>智能体讨论团</span><small>先讨论并达成共识，再按分工顺序使用完整工具，最后由组长验收。</small></div>
+                <span id="discussionTeamMemberCount" class="discussion-team-count">尚未保存团队</span>
+              </div>
+              <div id="discussionTeamRows" class="discussion-team-rows"></div>
+              <div class="discussion-team-actions">
+                <button id="addDiscussionTeamMember" class="add-model-provider" type="button">＋ 添加组员</button>
+                <button id="clearDiscussionTeam" class="discussion-team-clear" type="button">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <span class="button-label">清空讨论团配置</span>
+                </button>
+              </div>
+              <small>直接编辑每张成员卡片中的名称、身份、模型、分工和系统提示词，然后点击底部“保存设置”。有效团队保存成功后，主界面的回答模型会自动出现“讨论团”。至少 2 人且必须有一名组长。</small>
+            </div>
+            <div class="settings-field voice-setting">
+              <span>语音对话</span>
+              <label>实时听写语言<select id="settingVoiceLanguage"><option value="auto">自动（跟随 Windows 系统语言）</option><option value="zh-CN">中文（普通话）</option><option value="en-US">English (US)</option><option value="ja-JP">日本語</option><option value="ko-KR">한국어</option><option value="fr-FR">Français</option><option value="de-DE">Deutsch</option><option value="es-ES">Español</option><option value="it-IT">Italiano</option><option value="pt-BR">Português (Brasil)</option><option value="ru-RU">Русский</option><option value="ar-SA">العربية</option><option value="hi-IN">हिन्दी</option><option value="th-TH">ไทย</option><option value="vi-VN">Tiếng Việt</option><option value="id-ID">Bahasa Indonesia</option><option value="ms-MY">Bahasa Melayu</option><option value="tr-TR">Türkçe</option><option value="pl-PL">Polski</option><option value="nl-NL">Nederlands</option><option value="uk-UA">Українська</option></select></label>
+              <label>朗读声音<select id="settingVoiceName"><option value="">自动选择最佳可用声音</option></select></label>
+              <label>朗读速度<select id="settingVoiceRate"><option value="0.85">0.85×</option><option value="1">1×</option><option value="1.15">1.15×</option><option value="1.3">1.3×</option></select></label>
+              <label class="settings-checkbox"><input id="settingVoiceAutoSpeak" type="checkbox" checked>自动朗读最终回复</label>
+              <label class="settings-checkbox"><input id="settingVoiceHandsFree" type="checkbox" checked>说完自动发送</label>
+              <label class="settings-checkbox"><input id="settingVoiceAutoContinue" type="checkbox" checked>回复后继续聆听</label>
+              <small>自动听写跟随 Windows 系统语言，不再跟随界面语言；也可明确选择中文、英语及其他常用语言。朗读优先使用系统声音，不支持时使用联网自然语音，断网时回退 Windows 语音。只有确认后的文字会交给 Agent。</small>
+            </div>
+          </div>
+        </form>
+        <section id="visionSetupCard" class="vision-setup" data-settings-section="runtime" aria-live="polite">
+          <div class="vision-setup-copy">
+            <span class="vision-kicker">分层图片识别</span>
+            <h3 id="visionSetupTitle">正在检查视觉运行时…</h3>
+            <p id="visionSetupDetail">正在检查 Windows OCR、PaddleOCR AI 与 Google 备用视觉端点。</p>
+          </div>
+        </section>
+        <div id="runtimeCards" class="runtime-cards" data-settings-section="runtime"><div class="panel-empty">正在诊断…</div></div>
+        <div id="settingsSearchEmpty" class="panel-empty settings-search-empty" hidden>没有找到匹配的设置</div>
+      </section>
+    </div>
+    <div id="settingsSaveBar" class="settings-save-bar form-actions" hidden>
+      <span id="settingsSaveState" class="settings-save-state" role="status" aria-live="polite">密钥只显示配置状态，不返回明文</span>
+      <button id="saveSettings" type="submit" form="settingsForm">保存设置</button>
+    </div>
+    <div id="toastRegion" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+  </dialog>
+  <dialog id="mobilePairingDialog" class="mobile-pairing-dialog" aria-labelledby="mobilePairingTitle">
+    <div class="mobile-pairing-shell">
+      <header>
+        <div><span>ELREN MOBILE</span><h2 id="mobilePairingTitle">绑定 Android 手机</h2></div>
+        <button id="closeMobilePairing" type="button" aria-label="关闭绑定窗口"><span class="app-symbol app-symbol-close" aria-hidden="true"></span></button>
+      </header>
+      <div id="mobilePairingContent" class="mobile-pairing-content" aria-live="polite">
+        <div class="panel-empty">正在创建一次性绑定码…</div>
+      </div>
+      <p id="mobilePairingSecurity">绑定码 5 分钟后失效。设备会使用端到端 AES-256-GCM 加密，密钥不会显示在设置页或日志中。</p>
+    </div>
+  </dialog>
+  <dialog id="voiceDialog" class="voice-dialog" aria-labelledby="voiceDialogTitle">
+    <div class="voice-shell">
+      <header class="voice-head">
+        <div><span>ELREN LIVE VOICE</span><h2 id="voiceDialogTitle">实时语音对话</h2></div>
+        <button id="voiceClose" class="voice-icon-button" type="button" aria-label="关闭语音对话"><span class="app-symbol app-symbol-close" aria-hidden="true"></span></button>
+      </header>
+      <section class="voice-stage" aria-live="polite">
+        <div id="voiceOrb" class="voice-orb" data-state="idle" aria-hidden="true">
+          <i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        </div>
+        <strong id="voiceStatus">准备开始</strong>
+        <p id="voiceStatusDetail">点击麦克风开始连续对话，也可以直接编辑文字后发送。</p>
+        <div class="voice-health" aria-label="语音通道状态">
+          <span id="voiceMicHealth" data-active="false">麦克风</span>
+          <span id="voiceAgentHealth" data-active="false">Agent</span>
+          <span id="voiceSpeakerHealth" data-active="false">扬声器</span>
+        </div>
+      </section>
+      <section id="voiceTranscript" class="voice-transcript" aria-label="语音对话记录">
+        <div class="voice-transcript-empty">本次语音会话的转写与回答会显示在这里。</div>
+      </section>
+      <div class="voice-composer">
+        <div class="voice-draft-shell">
+          <textarea id="voiceDraft" rows="2" maxlength="20000" placeholder="正在听写的文字会先出现在这里，可修改后再发送…" aria-label="语音转写草稿"></textarea>
+        </div>
+      </div>
+      <div class="voice-controls">
+        <button id="voiceMicToggle" class="voice-primary" type="button" aria-pressed="false"><span class="voice-control-icon app-symbol app-symbol-mic" aria-hidden="true"></span><span>开始聆听</span></button>
+        <button id="voiceSend" type="button">发送本轮</button>
+        <button id="voiceInterrupt" type="button">打断回复</button>
+      </div>
+    </div>
+  </dialog>
+  <dialog id="humanProblemDialog" class="human-problem-dialog" aria-labelledby="humanProblemTitle">
+    <div id="humanProblemFormStep">
+      <span class="human-problem-kicker">人工操作反馈</span>
+      <h2 id="humanProblemTitle">发生了什么问题？</h2>
+      <p>描述你看到的错误、卡住的位置或操作结果，Agent 会带着这些信息继续处理。</p>
+      <textarea id="humanProblemDescription" rows="5" maxlength="2000" aria-label="问题描述" placeholder="例如：验证码通过后页面提示会话已过期，无法进入下一步…"></textarea>
+      <div class="human-problem-actions split"><button id="submitHumanProblem" type="button">确认发送</button><button id="skipHumanProblem" type="button">不填写</button></div>
+    </div>
+    <div id="humanProblemConfirmStep" class="hidden">
+      <span class="human-problem-kicker">防止误触</span>
+      <h2>确定不填写问题描述吗？</h2>
+      <p>不填写也会让 Agent 继续，但它只能根据当前界面自行判断失败原因。</p>
+      <div class="human-problem-actions"><button id="returnHumanProblem" type="button">返回填写</button><button id="confirmSkipHumanProblem" type="button">仍然不填写</button><button id="neverAskHumanProblem" type="button" class="quiet">不再询问并继续</button></div>
+    </div>
+  </dialog>
+  <div id="appToastRegion" class="toast-region app-toast-region" aria-live="polite" aria-atomic="true"></div>
+  <script src="/static/vendor/katex/katex.min.js?v=1"></script>
+  <script src="/static/vendor/air-datepicker/air-datepicker.js?v=3.6.0"></script>
+  <script src="/static/vendor/air-datepicker/locales-browser.js?v=3.6.0"></script>
+  <script src="/static/app.js?v=265"></script>
+  <script src="/static/voice.js?v=18"></script>
+</body>
+</html>

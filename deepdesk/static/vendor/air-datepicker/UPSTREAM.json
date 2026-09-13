@@ -1,0 +1,23 @@
+{
+  "package": "air-datepicker",
+  "version": "3.6.0",
+  "license": "MIT",
+  "repository": "https://github.com/t1m0n/air-datepicker",
+  "commit": "7031158c6c89b8c95b229748d913aa82639e74e8",
+  "archive": "https://registry.npmjs.org/air-datepicker/-/air-datepicker-3.6.0.tgz",
+  "archive_sha256": "dda047ae0435fe76eab66d4d920ecb02925a161c8874e172397a945db4e72798",
+  "integrity": "sha512-+txUkqa949rXBJDmkQAIb/GehZECJYF4rm9XJxVYtEX22C9WvBpE/XwCUQZBopKIkpg4ycAySJ9lH3JOg9qQTw==",
+  "files": {
+    "air-datepicker.js": "6b3e45e8e96d469d67fa7445b5465587af8bdfe9730a83c1bbd1ba813628d14e",
+    "air-datepicker.css": "06708c6aa3d725bd031ab0d4c9f9033c424e4477609b586eed2605e2dd39978e",
+    "locale/en.js": "cd413712a7d0d557cde5a44c5e98ce96ae73b4b62aabf244eb215713e43ede44",
+    "locale/zh.js": "854909f702ee9082a4ebc914cc04c1e895c223f5cd43fda871f44427205490f0"
+  },
+  "upstream_files": {
+    "air-datepicker.js": "24be9285f8a7b00ec14ca94a954f54383ea6a507067f7d3c3f1c2c2280462185",
+    "air-datepicker.css": "110391f897ba0abc6c563bc8d1e7afa135b26955ae57a5fc0a1228e79c394f73",
+    "locale/en.js": "417048d3447306fb475fbc3b39b2cf0cdbba559aa3b2164a7e387750babe2863",
+    "locale/zh.js": "2e12105d82afb30dd486e9a698ef17a90c4fcd66d8c665759050c72fdec8c607"
+  },
+  "adaptation": "Imported files contain exactly one additional final LF from apply_patch; upstream_files hashes match after removing that single byte. locales-browser.js only wraps unchanged upstream locale objects for a browser global. Runtime is fully local; no install scripts or CDN."
+}

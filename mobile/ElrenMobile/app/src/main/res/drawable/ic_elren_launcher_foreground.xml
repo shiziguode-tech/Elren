@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Reuse the approved colour artwork; Android applies the device's icon mask. -->
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+    android:src="@drawable/ic_elren"
+    android:gravity="fill"
+    android:filter="true" />

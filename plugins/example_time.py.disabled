@@ -1,0 +1,17 @@
+from datetime import datetime
+
+from deepdesk.models import Risk
+from deepdesk.plugins import ToolContext, ToolPlugin
+
+
+class LocalTimeTool(ToolPlugin):
+    name = "local_time"
+    description = "Return the current local date and time."
+    parameters = {"type": "object", "properties": {}, "additionalProperties": False}
+
+    def risk(self, arguments):
+        return Risk.SAFE
+
+    async def execute(self, arguments, context: ToolContext):
+        return {"local_time": datetime.now().astimezone().isoformat()}
+

@@ -1,0 +1,10 @@
+{
+  "name": "jianpu-ly",
+  "version": "1.889",
+  "source": "https://github.com/ssb22/jianpu-ly",
+  "distribution": "https://files.pythonhosted.org/packages/source/j/jianpu-ly/jianpu_ly-1.889.tar.gz",
+  "distribution_sha256": "06bae9443df40a1d0bea43143d2124ad1781e6469fa6521bd4183d566a77afd0",
+  "source_sha256": "0890ed37035cf61a218bcf259153079ff12add7a6be8cde6a3dc493ecdab807c",
+  "license": "Apache-2.0",
+  "usage": "Unmodified source is mirrored into Docker Lite and converts validated numbered notation to LilyPond, including WithStaff output."
+}
