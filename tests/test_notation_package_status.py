@@ -19,7 +19,8 @@ def package(tmp_path, monkeypatch):
     notation = native / "jianpu-ly"
     notation.mkdir(parents=True)
     for name in ("jianpu_ly.py", "UPSTREAM.json", "LICENSE"):
-        shutil.copyfile(ROOT / "work/tool-runtime/native/jianpu-ly" / name, notation / name)
+        source_name = "__init__.py" if name == "jianpu_ly.py" else name
+        shutil.copyfile(ROOT / "deepdesk/vendor/jianpu_ly" / source_name, notation / name)
     engraver = native / "lilypond" / f"lilypond-{LILYPOND_VERSION}" / "bin" / ("lilypond.exe" if os.name == "nt" else "lilypond")
     engraver.parent.mkdir(parents=True)
     engraver.write_bytes(b"not executed: package discovery fixture")

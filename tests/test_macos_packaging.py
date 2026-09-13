@@ -508,12 +508,12 @@ def test_macos_build_creates_standard_signed_bundle_and_optional_notarization() 
     ]
     assert all("==" in requirement for requirement in locked_requirements)
     assert len(locked_requirements) == len(set(locked_requirements))
-    assert runtime_package.strip() == (ROOT / "work/openclaw-runtime/package.json").read_text(
-        encoding="utf-8"
-    ).strip()
-    assert runtime_lock.strip() == (ROOT / "work/openclaw-runtime/package-lock.json").read_text(
-        encoding="utf-8"
-    ).strip()
+    # A clean source checkout has no generated/private work runtime. Verify
+    # that the builder consumes the committed manifests, not a local install.
+    assert 'RUNTIME_PACKAGE="$ROOT/macos/runtime-package.json"' in script
+    assert 'RUNTIME_LOCK="$ROOT/macos/runtime-package-lock.json"' in script
+    assert 'cp "$RUNTIME_PACKAGE" "$NODE_ROOT/package.json"' in script
+    assert 'cp "$RUNTIME_LOCK" "$NODE_ROOT/package-lock.json"' in script
     assert "<string>14.0</string>" in info_plist
     assert "npm audit --omit=dev --audit-level=high" in script
     assert "npm ci --omit=dev --ignore-scripts" in script

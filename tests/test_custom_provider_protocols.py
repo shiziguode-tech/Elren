@@ -6,18 +6,19 @@ from pathlib import Path
 import httpx
 import pytest
 from pydantic import ValidationError
+from test_settings_atomicity import disk_snapshot
+from test_settings_atomicity import isolated as isolated  # noqa: PLC0414 -- register pytest fixture
 
 from deepdesk.custom_providers import normalize_custom_provider
 from deepdesk.deepseek import DeepSeekClient, DeepSeekError
 from deepdesk.provider_secrets import ProviderSecrets, ProviderSecretsStore
 from deepdesk.runtime_settings import RuntimeSettingsPatch
-from test_settings_atomicity import isolated, disk_snapshot
 
 
 def row(**changes):
-    return dict(id="relay-one", source="custom", provider="openai", model="arbitrary-alias",
-                base_url="https://relay.example/api/v1", api_key="synthetic-only",
-                reasoning_levels=["low", "high"], **{}) | changes
+    return {"id": "relay-one", "source": "custom", "provider": "openai",
+            "model": "arbitrary-alias", "base_url": "https://relay.example/api/v1",
+            "api_key": "synthetic-only", "reasoning_levels": ["low", "high"]} | changes
 
 
 @pytest.mark.parametrize("url,expected", [

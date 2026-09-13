@@ -80,6 +80,9 @@ cp "$ROOT/macos/Info.plist" "$CONTENTS/Info.plist"
 mkdir -p "$RESOURCES/bundle"
 cp -R "$ROOT/skills" "$ROOT/plugins" "$RESOURCES/bundle/"
 cp "$ROOT/AGENTS.md" "$RESOURCES/bundle/AGENTS.md"
+for NOTICE in LICENSE THIRD_PARTY_NOTICES.md ACKNOWLEDGEMENTS.md LICENSE_PENDING.md; do
+  cp "$ROOT/$NOTICE" "$RESOURCES/bundle/$NOTICE"
+done
 PYTHON_BIN="$PYTHON_BIN" /bin/zsh "$ROOT/launcher/install-jianpu-runtime-macos.sh" \
   "$AUDIVERIS_SOURCE" "$RESOURCES/bundle"
 mkdir -p "$RESOURCES/bundle/work/tool-runtime/native/lilypond"
@@ -107,6 +110,9 @@ python -m pip install --disable-pip-version-check \
 python -m pip install --disable-pip-version-check \
   --build-constraint "$PYTHON_LOCK" --requirement "$PYTHON_LOCK"
 python -m pip check
+if [[ -n "${ELREN_OCR_MODEL_CACHE:-}" ]]; then
+  python "$ROOT/macos/provision_ocr_models.py" --install-from "$ELREN_OCR_MODEL_CACHE"
+fi
 python "$ROOT/macos/check_ocr_models.py"
 if [[ -n "${ELREN_PYTHON_ARCHIVE:-}" ]]; then
   cp "$ELREN_PYTHON_ARCHIVE" "$PORTABLE_PYTHON_ARCHIVE"
@@ -120,6 +126,9 @@ python "$ROOT/macos/bundle_python.py" "$PORTABLE_PYTHON_ARCHIVE" "$NATIVE_ROOT"
 "$NATIVE_ROOT/python/bin/python3" -m pip install --disable-pip-version-check \
   --build-constraint "$PYTHON_LOCK" --requirement "$PYTHON_LOCK"
 "$NATIVE_ROOT/python/bin/python3" -m pip check
+if [[ -n "${ELREN_OCR_MODEL_CACHE:-}" ]]; then
+  "$NATIVE_ROOT/python/bin/python3" "$ROOT/macos/provision_ocr_models.py" --install-from "$ELREN_OCR_MODEL_CACHE"
+fi
 export PLAYWRIGHT_BROWSERS_PATH="$RESOURCES/bundle/work/browser-runtime"
 export PLAYWRIGHT_SKIP_BROWSER_GC=1
 python -m playwright install --only-shell chromium

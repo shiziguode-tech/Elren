@@ -23,6 +23,27 @@ jobs:
           node-version: '22.22.3'
           cache: npm
           cache-dependency-path: macos/runtime-package-lock.json
+      - name: Provision pinned Audiveris arm64 build input
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = arm64
+          dmg="$RUNNER_TEMP/Audiveris-5.11.0-arm64.dmg"
+          mount_dir="$RUNNER_TEMP/audiveris-mount"
+          destination="$RUNNER_TEMP/elren-audiveris"
+          mkdir -p "$mount_dir" "$destination"
+          curl --fail --location --retry 3 --proto '=https' --proto-redir '=https' \
+            'https://github.com/Audiveris/audiveris/releases/download/5.11.0/Audiveris-5.11.0-macosx-arm64.dmg' -o "$dmg"
+          echo "17491af8b6d40153b031dd1f0815e37213f0999ef23f10586af46706e59b2eb6  $dmg" | shasum -a 256 -c -
+          hdiutil attach "$dmg" -readonly -nobrowse -mountpoint "$mount_dir"
+          trap 'hdiutil detach "$mount_dir"' EXIT
+          ditto "$mount_dir/Audiveris.app" "$destination/Audiveris.app"
+          python macos/bundle_audiveris.py "$destination/Audiveris.app/Contents" --check-only
+          echo "ELREN_AUDIVERIS_SOURCE=$destination/Audiveris.app/Contents" >> "$GITHUB_ENV"
+      - name: Provision hash-verified OCR model cache
+        run: |
+          python macos/provision_ocr_models.py --download-to "$RUNNER_TEMP/elren-ocr-cache"
+          echo "ELREN_OCR_MODEL_CACHE=$RUNNER_TEMP/elren-ocr-cache" >> "$GITHUB_ENV"
       - name: Install locked quality-gate dependencies
         run: |
           python -m venv .ci-venv

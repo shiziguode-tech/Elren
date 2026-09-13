@@ -8,7 +8,6 @@ import pytest
 from launcher.build_macos_source_archive import build as build_macos
 from launcher.build_release_archive import build, excluded
 
-
 LANGUAGE_FILE = Path("data/desktop-ui-language.txt")
 
 

@@ -188,9 +188,9 @@ async def test_removed_model_migration_preserves_primary_backup_without_network(
 
 
 def test_removed_deepseek_v41_saved_default_migrates_and_static_options_are_gone():
-    from deepdesk.runtime_settings import RuntimeSettings, RuntimeSettingsPatch
     from deepdesk.config import Settings
     from deepdesk.model_capabilities import reasoning_capability
+    from deepdesk.runtime_settings import RuntimeSettings, RuntimeSettingsPatch
 
     assert RuntimeSettings().model == "deepseek-v4-flash"
     saved = RuntimeSettings(model=DEEPSEEK_V41_TEST_MODEL, reasoning_effort="max")

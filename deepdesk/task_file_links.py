@@ -1,6 +1,6 @@
 """Resolve explicitly referenced output documents without exposing arbitrary files."""
-from pathlib import Path
 import re
+from pathlib import Path
 
 DOCUMENT_EXTENSIONS = {'.html', '.htm', '.pdf', '.txt', '.md', '.svg', '.png', '.jpg', '.jpeg',
                        '.webp', '.docx', '.pptx', '.xlsx', '.csv', '.json', '.mid', '.midi', '.musicxml'}

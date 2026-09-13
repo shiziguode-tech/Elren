@@ -132,26 +132,29 @@ source URLs is not represented as completion of that release gate.
 
 - The Windows shell uses Microsoft WebView2 assemblies and loader version
   1.0.4129.50 at the package root and under `launcher/webview2`.
+  The SDK's official `LICENSE.txt` and `NOTICE.txt` are retained in
+  `launcher/webview2`, with verified DLL hashes in `UPSTREAM.md`. These do not
+  replace the terms for the separately installed WebView2 browser Runtime.
 - The portable Node executable is version 24.18.1 according to
   `work/runtime-bundle.json`.
 - The Android source tree includes the Gradle wrapper configured for Gradle
-  9.6.1 and declares Android Gradle Plugin 8.7.3 and Kotlin Android 2.1.0.
+  8.9 and declares Android Gradle Plugin 8.7.3 and Kotlin Android 2.1.0.
   Dependencies fetched by Gradle must be inventoried from the resolved release
   build, not inferred only from these build declarations.
 
 ## Notice-completion gates
 
 Before public redistribution, the project owner should complete and retain a
-license/SBOM review of the exact final payload. In particular, the current
-workspace does not contain:
+license/SBOM review of the exact final payload. The source repository is not a
+complete installed runtime; the following final-artifact checks remain open:
 
-- a separate WebView2 redistribution/license notice beside the packaged
-  WebView2 DLLs;
-- a Node.js runtime license file at `work/node-runtime/LICENSE`; or
+- the separate WebView2 browser Runtime's applicable redistribution terms;
+- preservation of the Node.js runtime license at `work/node-runtime/LICENSE`
+  in each Windows release (Node itself is not committed to this source tree); and
 - a consolidated Gradle-wrapper/Android resolved-dependency notice in the
   Android source tree.
 
-Those absences are recorded as release gates, not filled with guessed license
+Those checks are recorded as release gates, not filled with guessed license
 terms. Preserve every existing nested license/notice file when producing the
 final package and resolve the applicable upstream redistribution terms before
 release.

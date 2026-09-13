@@ -1,8 +1,9 @@
 import json
 
+from test_context_compaction import _engine
+
 from deepdesk.harness import select_tool_schemas
 from deepdesk.models import AgentProfile, AgentTask
-from test_context_compaction import _engine
 
 
 def schema(name, size):
@@ -37,4 +38,5 @@ def test_current_request_survives_repeated_compaction_with_old_history(tmp_path)
             runtime_state={},target_tokens=3000,active_schemas=[])
         assert task.prompt in messages[1]['content']
         assert all(path in messages[1]['content'] for path in archives)
-        assert json.loads(open(info['archive'],encoding='utf-8').read())['task_id']==task.id
+        with open(info['archive'], encoding='utf-8') as archive:
+            assert json.load(archive)['task_id'] == task.id

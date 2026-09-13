@@ -69,6 +69,11 @@ location protected by your operating-system account or full-disk encryption.
 位置保存和传输。
 """
 PUBLIC_ALLOWED_ROOT_ENTRIES = {
+    "license",
+    "acknowledgements.md",
+    "security.md",
+    "contributing.md",
+    "license_pending.md",
     ".env.example",
     ".github",
     ".gitignore",

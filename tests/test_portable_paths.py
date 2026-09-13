@@ -108,7 +108,6 @@ async def test_packaged_background_browser_captures_without_opening_ui(tmp_path:
 
 @pytest.mark.asyncio
 async def test_packaged_background_browser_opens_workspace_file_url(tmp_path: Path):
-    root = Path(__file__).resolve().parents[1]
     preview_root = tmp_path / "local-preview"
     preview_root.mkdir()
     (preview_root / "theme.css").write_text("body{background:rgb(250,247,240)}", encoding="utf-8")

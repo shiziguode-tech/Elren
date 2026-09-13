@@ -183,7 +183,12 @@ def test_every_real_reverse_part_receives_staff(name, structure_midi):
     assert case["wrapped"].count("WithStaff") == expected
 
 
-def test_nextscore_is_wrapped_without_merging_movements():
+def test_nextscore_is_wrapped_without_merging_movements(tmp_path, monkeypatch):
+    compiler = tmp_path / "jianpu_ly.py"
+    compiler.write_bytes((ROOT / "deepdesk/vendor/jianpu_ly/__init__.py").read_bytes())
+    for name in ("LICENSE", "UPSTREAM.json"):
+        (tmp_path / name).write_bytes((ROOT / "deepdesk/vendor/jianpu_ly" / name).read_bytes())
+    monkeypatch.setenv("ELREN_JIANPU_LY_HOME", str(tmp_path))
     source = BASE + " NextScore\n" + SECOND
     with contextlib.redirect_stderr(io.StringIO()):
         lily, _ = JianpuOMRTool._compile_jianpu_source(_with_western_staff(source), ROOT)
@@ -200,7 +205,7 @@ def test_repeat_restores_initial_tempo_on_every_pass(structure_midi):
 
 
 def test_compatibility_does_not_modify_pinned_open_source_file():
-    path = ROOT / "work/tool-runtime/native/jianpu-ly/jianpu_ly.py"
+    path = ROOT / "deepdesk/vendor/jianpu_ly/__init__.py"
     before = hashlib.sha256(path.read_bytes()).hexdigest()
     assert before == "0890ed37035cf61a218bcf259153079ff12add7a6be8cde6a3dc493ecdab807c"
     compiler_ast(path.read_text(encoding="utf-8"), str(path))
@@ -232,6 +237,6 @@ def test_zero_length_ending_fails_instead_of_looping():
 
 
 def test_matching_shape_with_modified_release_is_refused():
-    path = ROOT / "work/tool-runtime/native/jianpu-ly/jianpu_ly.py"
+    path = ROOT / "deepdesk/vendor/jianpu_ly/__init__.py"
     with pytest.raises(RuntimeError, match="release hash"):
         compiler_ast(path.read_text(encoding="utf-8") + "\n# different source\n", "changed.py")

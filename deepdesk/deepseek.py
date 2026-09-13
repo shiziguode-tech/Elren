@@ -23,8 +23,10 @@ from deepdesk.custom_providers import (
     provider_selector,
 )
 from deepdesk.model_capabilities import (
-    ReasoningCapability, reasoning_capability, RETIRED_DEEPSEEK_MODEL,
+    RETIRED_DEEPSEEK_MODEL,
+    ReasoningCapability,
     is_retired_deepseek_selector,
+    reasoning_capability,
 )
 from deepdesk.task_titles import clean_generated_title
 

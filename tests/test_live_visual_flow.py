@@ -1,10 +1,11 @@
-from pathlib import Path
 import asyncio
 import threading
 
 import pytest
+from test_live_computer_use import (
+    live_fixture as live_fixture,  # noqa: PLC0414 -- register pytest fixture
+)
 
-from test_live_computer_use import live_fixture
 from deepdesk.live_control_geometry import ImageTransform
 from deepdesk.live_control_vision import Judgment, VisualReply, VisualUnavailable
 
@@ -26,7 +27,7 @@ class StubJudge:
 
 
 async def started_fixture(live_fixture, judge):
-    tool, controller, context, screen, driver, foreground = live_fixture
+    tool, _controller, context, _screen, driver, _foreground = live_fixture
     tool.visual_flow.judge = judge
     started = await tool.execute({'action':'start'}, context)
     arguments = {'action': 'click', 'x': -50, 'y': 0, 'action_id':'call-1',
@@ -37,7 +38,7 @@ async def started_fixture(live_fixture, judge):
 @pytest.mark.asyncio
 @pytest.mark.parametrize('restores', [True, False])
 async def test_caret_phase_requires_exact_original_pixels(live_fixture, restores):
-    tool, controller, context, screen, *_ = live_fixture
+    tool, _controller, context, screen, *_ = live_fixture
     start = await tool.execute({'action':'start'}, context)
     original = screen.image.copy()
     for y in range(10, 27):
@@ -157,7 +158,7 @@ def test_css_transform_requires_measured_scale():
 
 @pytest.mark.asyncio
 async def test_stop_cleans_observe_only_session(live_fixture):
-    tool, context, _driver, args = await started_fixture(live_fixture, StubJudge())
+    tool, context, _driver, _args = await started_fixture(live_fixture, StubJudge())
     assert tool.visual_flow.observations
     await tool.cleanup(context)
     assert not tool.visual_flow.observations

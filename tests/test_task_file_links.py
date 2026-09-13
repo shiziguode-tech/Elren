@@ -1,6 +1,9 @@
 from types import SimpleNamespace
+
 import pytest
+
 from deepdesk.task_file_links import referenced_task_file
+
 
 def task(text):
     return SimpleNamespace(model_dump=lambda **kw: {'result': text})

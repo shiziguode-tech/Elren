@@ -2452,7 +2452,7 @@ class LiveComputerUseTool(ToolPlugin):
         self.windows_ocr = windows_ocr or WindowsOCR()
         from deepdesk.live_control_flow import LiveActionFlow
         from deepdesk.live_control_vision import LiveVisualJudge
-        self.visual_flow = LiveActionFlow(self, visual_judge or LiveVisualJudge(lambda: []))
+        self.visual_flow = LiveActionFlow(self, visual_judge or LiveVisualJudge(list))
         # Extend this existing tool schema; no second tool/protocol is added.
         import copy
         self.parameters = copy.deepcopy(type(self).parameters)

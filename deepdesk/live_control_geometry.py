@@ -1,6 +1,6 @@
 """Coordinate transforms used only by live_computer_use (physical pixels)."""
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
 
 
 def observation_crop(observation, action, next_action=None):

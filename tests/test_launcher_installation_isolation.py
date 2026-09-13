@@ -22,10 +22,10 @@ def test_real_native_installation_channels_and_foreign_process_protection(tmp_pa
     built = subprocess.run([str(compiler),'/nologo','/target:exe','/platform:x64',
         '/main:LauncherIsolationTests',f'/out:{executable}',*[f'/reference:{ref}' for ref in references],
         str(ROOT/'launcher/ElrenLauncher.cs'),str(ROOT/'tests/launcher_isolation_harness.cs')],
-        capture_output=True,text=True,encoding='utf-8',errors='replace',timeout=30)
+        capture_output=True,text=True,encoding='utf-8',errors='replace',timeout=30,check=False)
     assert built.returncode == 0, built.stdout + built.stderr
     checked = subprocess.run([str(executable),str(tmp_path/'package')],
-        capture_output=True,text=True,encoding='utf-8',errors='replace',timeout=20,creationflags=subprocess.CREATE_NO_WINDOW)
+        capture_output=True,text=True,encoding='utf-8',errors='replace',timeout=20,creationflags=subprocess.CREATE_NO_WINDOW,check=False)
     assert checked.returncode == 0, checked.stdout+checked.stderr
     assert 'LAUNCHER_INSTALLATION_ISOLATION_OK' in checked.stdout
 

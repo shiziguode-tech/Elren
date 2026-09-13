@@ -53,7 +53,14 @@ elren
 macOS 完整构建使用 `macos/build-macos-app.sh`，要求 Apple Silicon、Python 3.12、
 Xcode Command Line Tools、兼容的 Node.js，以及脚本检查的其他构建资源。
 Windows 构建脚本位于 `launcher/`。此源码副本尚未在全新机器上完成完整构建验收。
-仓库中的 GitHub Actions 构建流程仅手动触发，其云端完整构建尚待验证。
+核心 CI 在 push／PR 时运行 Windows、Linux 离线回归及 Windows 启动器编译；
+Android 工作流在相关文件发生 push／PR 变更时运行；完整 macOS 构建仅手动触发。
+macOS 工作流会准备哈希锁定的 Audiveris 和 OCR 模型输入；新增流程的云端完整构建仍待验证。
+
+## 参与项目与安全报告
+
+提交修改前请阅读 [贡献指南](CONTRIBUTING.md)。漏洞请按
+[安全报告说明](SECURITY.md)私下联系维护者，不要公开密钥或个人数据。
 
 ## 配置与隐私
 

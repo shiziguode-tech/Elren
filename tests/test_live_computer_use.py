@@ -15,10 +15,8 @@ from deepdesk.harness import recommended_tool_names
 from deepdesk.models import AgentProfile, Risk
 from deepdesk.plugins.base import ToolContext
 from deepdesk.plugins.builtin.live_computer_use import (
-    ActionRejectedError,
     LiveComputerUseController,
     LiveComputerUseTool,
-    StaleObservationError,
     _Win32ControlBanner,
 )
 

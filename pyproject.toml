@@ -81,6 +81,7 @@ exclude = [
   ".kotlin",
   ".ruff_cache",
   ".venv",
+  ".ci-venv",
   "__pycache__",
   "data",
   "dist",
@@ -89,6 +90,8 @@ exclude = [
   "outputs",
   "screenshots",
   "work",
+  # Preserve third-party source unchanged; its behavior is tested separately.
+  "deepdesk/vendor",
 ]
 
 [tool.ruff.lint]

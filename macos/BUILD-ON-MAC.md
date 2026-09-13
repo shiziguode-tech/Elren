@@ -15,6 +15,11 @@ Requirements:
 Music recognition is required in the default build; missing or mismatched
 Audiveris/Java/model/license files stop the build before downloads or cleanup.
 The build does not download Audiveris or substitute a system Java installation.
+The manually triggered GitHub Actions workflow has a separate provisioning step:
+it downloads the official 5.11.0 arm64 DMG, checks the pinned upstream asset SHA-256,
+mounts it read-only, copies the app into the runner's temporary directory and runs
+the same offline validator. It does not install into /Applications. The local
+build script continues to require an explicitly prepared local app.
 It checks `/Applications/Audiveris.app/Contents` by default. To use a reviewed
 local copy elsewhere, set this before running the build:
 
@@ -96,6 +101,20 @@ before building if the dependency wheel omits them; these checks never fetch
 models. PDF/image metadata recognition is still best-effort, not a guarantee
 that a title or tempo will always be found.
 
+For a fresh build environment, explicitly prepare the pinned model cache:
+
+```zsh
+python3 macos/provision_ocr_models.py --download-to /path/to/build-ocr-cache
+export ELREN_OCR_MODEL_CACHE=/path/to/build-ocr-cache
+```
+
+This command downloads only the three versioned upstream model URLs and verifies
+their fixed hashes before use. The builder copies the verified cache into its two
+new Python environments. Without this opt-in variable, existing offline behavior
+is unchanged. Models are never downloaded by this helper at application startup.
+Cloud workflow changes still require a real successful cloud build before being
+represented as validated; unit/contract tests are not native packaging acceptance.
+
 Double-click `Build Elren for macOS.command`, or run:
 
 ```zsh
@@ -105,7 +124,7 @@ chmod +x "Build Elren for macOS.command" macos/build-macos-app.sh
 
 The output is `dist/Elren-v1.0-macOS-<architecture>.zip` and a matching SHA-256 file.
 
-An ad-hoc signature is suitable only for local testing. Public distribution requires an Apple Developer ID Application certificate and notarization:
+For public distribution with the standard Gatekeeper experience, use an Apple Developer ID Application certificate and notarization. An ad-hoc-signed build does not provide that trusted distribution experience:
 
 ```zsh
 export ELREN_CODESIGN_IDENTITY="Developer ID Application: Example Company (TEAMID)"

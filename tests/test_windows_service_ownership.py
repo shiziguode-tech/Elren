@@ -58,7 +58,7 @@ ConvertTo-Json -Compress @{kills=@($script:kills);blocked=$blocked}
     result = subprocess.run([
         "powershell.exe", "-NoProfile", "-NonInteractive", "-EncodedCommand",
         base64.b64encode(script.encode("utf-16-le")).decode("ascii"),
-    ], capture_output=True, text=True, timeout=20)
+    ], capture_output=True, text=True, timeout=20, check=False)
     assert result.returncode == 0, result.stderr
     report = json.loads(result.stdout)
     assert report["kills"] == expected

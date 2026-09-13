@@ -6,6 +6,7 @@ from typing import Any
 
 from pydantic import AliasChoices, AliasGenerator, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
 from deepdesk.model_capabilities import is_retired_deepseek_selector
 
 

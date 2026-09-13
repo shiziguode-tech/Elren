@@ -1,10 +1,10 @@
-import pytest
 import json
-from deepdesk.engine import AgentEngine
-from deepdesk.models import AgentTask
-from deepdesk.engine import runtime_system_prompt
+
+import pytest
+
+from deepdesk.engine import AgentEngine, runtime_system_prompt
 from deepdesk.harness import build_execution_brief
-from deepdesk.models import AgentProfile
+from deepdesk.models import AgentProfile, AgentTask
 
 
 @pytest.mark.parametrize('prompt', ['Quick example: build a parser', 'Explain documentarium', 'A random example'])

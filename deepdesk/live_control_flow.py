@@ -5,12 +5,12 @@ import asyncio
 import copy
 import hashlib
 import json
-import time
 import math
+import time
 from collections import OrderedDict
 
-from deepdesk.live_control_vision import LiveVisualJudge
 from deepdesk.live_control_geometry import observation_crop, transform_box
+from deepdesk.live_control_vision import LiveVisualJudge
 
 ACTIONS = frozenset({'click', 'double_click', 'type', 'key', 'scroll', 'drag'})
 
@@ -25,9 +25,10 @@ def validate_action(action):
     """Validate every sequence item before admitting any native input."""
     if not isinstance(action, dict) or action.get('action') not in ACTIONS:
         raise ValueError('Unsupported action')
-    if 'x' in action or 'y' in action:
-        if not all(type(action.get(k)) is int for k in ('x', 'y')):
-            raise ValueError('Coordinates require integer x and y')
+    if ('x' in action or 'y' in action) and not all(
+        type(action.get(k)) is int for k in ('x', 'y')
+    ):
+        raise ValueError('Coordinates require integer x and y')
     for name in ('target_description', 'expected_result'):
         if name in action and (not isinstance(action[name], str) or len(action[name]) > 2000):
             raise ValueError(f'{name} must be a string of at most 2000 characters')
@@ -42,9 +43,11 @@ def validate_action(action):
             raise ValueError('key requires 1–8 nonempty key names')
         if any(k.strip().casefold() in {'esc', 'escape'} for k in keys):
             raise ValueError('Esc is reserved for local emergency stop')
-    if kind == 'scroll':
-        if any(type(action.get(k, 0)) is not int or abs(action.get(k, 0)) > 12000 for k in ('scroll_x', 'scroll_y')):
-            raise ValueError('Scroll offsets must be integer pixels within ±12000')
+    if kind == 'scroll' and any(
+        type(action.get(k, 0)) is not int or abs(action.get(k, 0)) > 12000
+        for k in ('scroll_x', 'scroll_y')
+    ):
+        raise ValueError('Scroll offsets must be integer pixels within ±12000')
     if kind == 'drag':
         path, duration = action.get('path'), action.get('duration', .6)
         if not isinstance(path, list) or not 2 <= len(path) <= 64 or any(

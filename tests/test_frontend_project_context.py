@@ -23,7 +23,7 @@ def test_project_picker_removed_without_breaking_composer_initialization():
     if not node:
         pytest.skip("Node required")
     script = "const $=()=>null;\n" + function("syncProjectComposer") + "\nsyncProjectComposer();\n" + listener.group()
-    result = subprocess.run([node, "-e", script], capture_output=True, text=True, timeout=10)
+    result = subprocess.run([node, "-e", script], capture_output=True, text=True, timeout=10, check=False)
     assert result.returncode == 0, result.stderr
 
 

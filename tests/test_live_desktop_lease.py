@@ -4,6 +4,7 @@ import sys
 from uuid import uuid4
 
 import pytest
+
 from deepdesk.live_control_desktop import DesktopLease
 
 pytestmark=pytest.mark.skipif(sys.platform!='win32',reason='Windows kernel primitives')

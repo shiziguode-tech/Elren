@@ -199,20 +199,22 @@ async def test_real_uvicorn_drains_live_stream_with_a_finite_deadline(tmp_path):
             await asyncio.sleep(0.02)
         assert server.started
         port = server.servers[0].sockets[0].getsockname()[1]
-        async with httpx.AsyncClient(trust_env=False) as client:
-            async with client.stream("GET", f"http://127.0.0.1:{port}/isolated-stream") as response:
-                # Keep the iterator alive: otherwise its finalizer closes the
-                # connection and this stops testing the live-response case.
-                iterator = response.aiter_bytes()
-                assert await anext(iterator)
-                assert not stream_finished.is_set()
-                (tmp_path / f"service-exit-request-{instance}").touch()
-                await asyncio.wait_for(task, timeout=3)
-                assert cleaned.is_set()
-                await asyncio.wait_for(stream_finished.wait(), timeout=1)
-                assert not release_stream.is_set()
-                assert server.config.timeout_graceful_shutdown == 0.15
-                assert (tmp_path / f"service-exit-complete-{instance}").read_text() == "stopped"
+        async with (
+            httpx.AsyncClient(trust_env=False) as client,
+            client.stream("GET", f"http://127.0.0.1:{port}/isolated-stream") as response,
+        ):
+            # Keep the iterator alive: otherwise its finalizer closes the
+            # connection and this stops testing the live-response case.
+            iterator = response.aiter_bytes()
+            assert await anext(iterator)
+            assert not stream_finished.is_set()
+            (tmp_path / f"service-exit-request-{instance}").touch()
+            await asyncio.wait_for(task, timeout=3)
+            assert cleaned.is_set()
+            await asyncio.wait_for(stream_finished.wait(), timeout=1)
+            assert not release_stream.is_set()
+            assert server.config.timeout_graceful_shutdown == 0.15
+            assert (tmp_path / f"service-exit-complete-{instance}").read_text() == "stopped"
     finally:
         release_stream.set()
         server.should_exit = True

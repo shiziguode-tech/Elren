@@ -1,11 +1,10 @@
 import asyncio
 import json
-from pathlib import Path
 
-from PIL import Image
 import pytest
+from PIL import Image
 
-from deepdesk.live_control_vision import LiveVisualJudge, Judgment, VisualReply, VisualUnavailable
+from deepdesk.live_control_vision import Judgment, LiveVisualJudge, VisualUnavailable
 from deepdesk.vision_runtime import VisionEndpoint
 
 
@@ -94,7 +93,7 @@ async def test_drag_path_prompt_uses_transformed_image_coordinates(observation):
 @pytest.mark.asyncio
 async def test_missing_route_fails_closed(observation):
     with pytest.raises(VisualUnavailable,match='No configured'):
-        await LiveVisualJudge(lambda:[]).assess(observation,{'action':'key','keys':['tab']},stage='pre')
+        await LiveVisualJudge(list).assess(observation,{'action':'key','keys':['tab']},stage='pre')
 
 
 @pytest.mark.asyncio
