@@ -26,6 +26,7 @@ from deepdesk.egress_region import EgressRegionDetector
 from deepdesk.harness import (
     TOOL_SEARCH_NAME,
     build_execution_brief,
+    delegation_batch_needs_separation,
     normalize_tool_envelope,
     routing_intent,
     search_tool_schemas,
@@ -3945,11 +3946,7 @@ class AgentEngine:
                     await self.emit_async(task, "assistant", {"content": message["content"]})
                 reset_semantic_recovery()
                 batch_signatures: set[str] = set()
-                delegation_mixed_batch = len(tool_calls) > 1 and any(
-                    str((call.get("function") or {}).get("name") or "")
-                    == DELEGATE_SPECIALISTS_NAME
-                    for call in tool_calls
-                )
+                delegation_mixed_batch = delegation_batch_needs_separation(tool_calls)
                 for call in tool_calls:
                     if cancel.is_set():
                         raise asyncio.CancelledError
@@ -3982,7 +3979,8 @@ class AgentEngine:
                         result = {
                             "ok": False,
                             "error": (
-                                "A delegation response must contain only delegate_specialists. "
+                                "Delegation can share a response with specialist search and read-only "
+                                "filesystem observation, but side-effecting tools must wait for a later response. "
                                 "The entire mixed tool batch was rejected before any action ran."
                             ),
                             "code": "mixed_delegation_batch",

@@ -138,6 +138,24 @@ def _terms(value: str) -> set[str]:
     return words
 
 
+def delegation_batch_needs_separation(tool_calls: list[dict]) -> bool:
+    """Allow observation alongside delegation, never an unreviewed mutation."""
+    if not any((c.get('function') or {}).get('name') == 'delegate_specialists' for c in tool_calls):
+        return False
+    for call in tool_calls:
+        function = call.get('function') or {}
+        if function.get('name') in {'delegate_specialists', 'specialist_search'}:
+            continue
+        try:
+            arguments = json.loads(function.get('arguments') or '{}')
+        except (TypeError, ValueError):
+            return True
+        if (function.get('name') != 'filesystem' or not isinstance(arguments, dict)
+                or arguments.get('action') not in {'read', 'list', 'map', 'search'}):
+            return True
+    return False
+
+
 def routing_intent(prompt: str) -> str:
     """Quoted message bodies are data, not requests to code/test/configure the host."""
     if re.search(r"(?i)(发送|发消息|发给|发送消息|send|message|text)", prompt):

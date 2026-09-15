@@ -85,6 +85,8 @@ SAFE_ENVIRONMENT_NAMES = {
     "PATHEXT",
     "COMSPEC",
     "PROCESSOR_ARCHITECTURE",
+    "PYTHONIOENCODING",
+    "PYTHONUTF8",
 }
 ENVIRONMENT_REFERENCE_PATTERN = re.compile(r"(?i)\$env:([A-Za-z_][A-Za-z0-9_()]*)")
 

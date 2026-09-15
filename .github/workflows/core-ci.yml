@@ -48,6 +48,7 @@ jobs:
           tests/test_agent_deep_validation.py
           tests/test_artifact_request_scope.py tests/test_mobile_verification_policy.py
           tests/test_mobile_efficiency.py
+          tests/test_demo_regressions.py
       - name: Build Python distributions
         run: python -m build
       - name: Compile Windows launcher

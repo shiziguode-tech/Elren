@@ -9,6 +9,7 @@ from typing import Any
 from urllib.parse import urlparse, urlsplit
 from urllib.request import url2pathname
 
+from deepdesk.browser_downloads import BrowserDownloads
 from deepdesk.models import Risk
 from deepdesk.plugins.base import ToolContext, ToolPlugin
 from deepdesk.plugins.builtin.web import WebTool
@@ -27,7 +28,9 @@ class BackgroundBrowserTool(ToolPlugin):
         "mode to verify actual pixels, overlap, clipping, black screens, contrast, and layout. Prefer "
         "this tool over launching a visible "
         "browser for web research and UI validation. The temporary session has no user cookies or "
-        "logins and is destroyed automatically when the task ends."
+        "logins and is destroyed automatically when the task ends. Download events are saved to the "
+        "task workspace and returned in downloads with exact path, size and hash. Use inspect/wait for "
+        "delayed downloads; never search personal directories or click again just to locate a file."
     )
     _FILE_DOCUMENT_EXTENSIONS = {
         ".htm", ".html", ".pdf", ".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".svg",
@@ -133,6 +136,7 @@ class BackgroundBrowserTool(ToolPlugin):
         )
         self._playwright = None
         self._sessions: dict[str, tuple[Any, Any]] = {}
+        self._downloads: dict[str, BrowserDownloads] = {}
 
     @staticmethod
     def _is_loopback_url(url: str) -> bool:
@@ -298,7 +302,7 @@ class BackgroundBrowserTool(ToolPlugin):
             self._playwright = await async_playwright().start()
         browser = await self._launch_browser()
         browser_context = await browser.new_context(
-            accept_downloads=False,
+            accept_downloads=True,
             locale="en-US",
             viewport={"width": 1440, "height": 900},
         )
@@ -309,6 +313,9 @@ class BackgroundBrowserTool(ToolPlugin):
 
         await browser_context.route("**/*", guarded_route)
         page = await browser_context.new_page()
+        downloads = BrowserDownloads(context.workspace, context.task_id)
+        page.on('download', downloads.receive)
+        self._downloads[context.task_id] = downloads
         self._sessions[context.task_id] = (browser, page)
         return browser, page
 
@@ -773,6 +780,11 @@ class BackgroundBrowserTool(ToolPlugin):
                 else "system-headless-fallback"
             ),
         }
+        downloads = self._downloads.get(context.task_id)
+        if downloads is not None:
+            # Keep download evidence ahead of large DOM/layout payloads so the
+            # engine's bounded tool serializer cannot bury the saved path.
+            result = {'downloads': await downloads.collect(), **result}
         if action_observation is not None:
             result["action_observation"] = action_observation
         if action == "screenshot" or bool(arguments.get("capture")):
@@ -799,10 +811,15 @@ class BackgroundBrowserTool(ToolPlugin):
         return result
 
     async def cleanup(self, context: ToolContext) -> None:
+        downloads = self._downloads.pop(context.task_id, None)
         session = self._sessions.pop(context.task_id, None)
-        if session:
-            browser, _page = session
-            await browser.close()
+        try:
+            if downloads:
+                await downloads.close()
+        finally:
+            if session:
+                browser, _page = session
+                await browser.close()
         if not self._sessions and self._playwright is not None:
             await self._playwright.stop()
             self._playwright = None

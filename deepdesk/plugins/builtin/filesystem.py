@@ -133,7 +133,11 @@ class FileSystemTool(ToolPlugin):
         root = Path(workspace).resolve()
         path = (root / requested).resolve()
         if path != root and root not in path.parents:
-            raise PermissionError("Path escapes the configured workspace")
+            raise PermissionError(
+                "Path escapes the configured workspace. Open/select this file's project "
+                "before starting a task, or move the demo inputs into the active workspace. "
+                "Do not work around the boundary through another tool."
+            )
         return path
 
     @staticmethod
