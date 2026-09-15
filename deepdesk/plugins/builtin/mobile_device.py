@@ -14,7 +14,7 @@ class MobileDeviceTool(ToolPlugin):
     name = "mobile_device"
     description = (
         "Inspect and operate a user-paired Android companion device over an encrypted local-network "
-        "session. Use list/status before actions. To answer which apps are installed, always call "
+        "session. Prefer observe for one-call screenshot plus semantic analysis; provide a focused question. Use list/status before actions. To answer which apps are installed, always call "
         "list_apps first: it reads Android's user-visible launcher catalog directly, defaults to "
         "non-system apps, "
         "and avoids opening Settings or scrolling an app list. For reading any other long phone page "
@@ -34,7 +34,7 @@ class MobileDeviceTool(ToolPlugin):
             "action": {
                 "type": "string",
                 "enum": [
-                    "status", "list", "list_apps", "inspect", "screenshot", "tap", "scroll",
+                    "status", "list", "list_apps", "inspect", "screenshot", "observe", "tap", "scroll",
                     "swipe", "type", "back", "home", "recents", "launch", "open_url",
                 ],
             },
@@ -46,6 +46,7 @@ class MobileDeviceTool(ToolPlugin):
             "duration_ms": {"type": "integer", "minimum": 50, "maximum": 5000},
             "direction": {"type": "string", "enum": ["down", "up"]},
             "overlap_ratio": {"type": "number", "minimum": 0.25, "maximum": 0.75},
+            "question": {"type": "string", "maxLength": 4000},
             "text": {"type": "string", "maxLength": 20000},
             "package": {"type": "string", "maxLength": 240},
             "url": {"type": "string", "maxLength": 4000},
@@ -55,15 +56,16 @@ class MobileDeviceTool(ToolPlugin):
         "additionalProperties": False,
     }
 
-    def __init__(self, bridge: MobileBridge, screenshot_dir: Path) -> None:
+    def __init__(self, bridge: MobileBridge, screenshot_dir: Path, vision: ToolPlugin | None = None) -> None:
         self.bridge = bridge
         self.screenshot_dir = screenshot_dir
+        self.vision = vision
 
     def risk(self, arguments: dict[str, Any]) -> Risk:
         action = str(arguments.get("action") or "")
         if action in {"status", "list", "inspect"}:
             return Risk.SAFE
-        if action in {"screenshot", "list_apps"}:
+        if action in {"screenshot", "observe", "list_apps"}:
             return Risk.MEDIUM
         return Risk.HIGH
 
@@ -78,15 +80,15 @@ class MobileDeviceTool(ToolPlugin):
         command_arguments = {
             key: value
             for key, value in arguments.items()
-            if key not in {"action", "device_id"}
+            if key not in {"action", "device_id", "question"}
         }
         result = await self.bridge.command(
-            action,
+            "screenshot" if action == "observe" else action,
             command_arguments,
             device_id=device_id,
             autonomous=context.approval_policy == "autonomous",
         )
-        if action == "screenshot" and result.get("image_base64"):
+        if action in {"screenshot", "observe"} and result.get("image_base64"):
             raw = base64.b64decode(str(result.pop("image_base64")), validate=True)
             if not raw or len(raw) > 12 * 1024 * 1024:
                 raise ValueError("Android screenshot is empty or exceeds 12 MiB")
@@ -94,4 +96,16 @@ class MobileDeviceTool(ToolPlugin):
             path = self.screenshot_dir / f"android-{int(time.time() * 1000)}.png"
             path.write_bytes(raw)
             result["path"] = str(path)
+            if action == "observe":
+                if self.vision is None:
+                    result["analysis_error"] = "Semantic analysis is unavailable; use vision on this saved screenshot"
+                else:
+                    context.authorized_read_paths = tuple(dict.fromkeys([*context.authorized_read_paths, str(path.resolve())]))
+                    try:
+                        result["analysis"] = await self.vision.execute({
+                            "image_path": str(path), "mode": "semantic",
+                            "question": arguments.get("question") or "Describe the current app, visible controls with pixel coordinates, and any errors. Do not infer unseen results.",
+                        }, context)
+                    except Exception as exc:
+                        result["analysis_error"] = f"{type(exc).__name__}: {exc}"
         return result

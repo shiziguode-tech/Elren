@@ -27,9 +27,11 @@ from deepdesk.harness import (
     TOOL_SEARCH_NAME,
     build_execution_brief,
     normalize_tool_envelope,
+    routing_intent,
     search_tool_schemas,
     select_tool_schemas,
     serialize_tool_output,
+    simple_mobile_task,
 )
 from deepdesk.models import (
     AgentProfile,
@@ -588,6 +590,23 @@ RUNTIME_MOBILE_PROMPT = """ANDROID MODULE
 Prefer direct mobile_device actions over navigating Android Settings. For installed apps use status/list then
 list_apps; omit system packages unless requested. Treat phone connectivity, screen-capture authorization, and
 Accessibility as separate states. Reconnect after backgrounding/network changes and verify the device-side result.
+For a short phone task, use mobile_device.observe to capture AND interpret the current screen in one call.
+Ask for the target control coordinates and the next action in that observation. Its semantic analysis is already
+visual evidence; do not call vision again on that same image unless answering a materially different question.
+Use inspect only when an accessible control is needed. After two failures from the same missing input capability,
+stop probing it. Use one known direct alternative or report the blocker and the smallest user action needed.
+Do not tour Android Settings or use another app as a clipboard scratchpad to work around a missing input field.
+After sending, verify the device-side result with a fresh observation: intended recipient, exact outgoing text,
+message bubble, pending/failure indicator, and input field state. A tap being accepted does not establish sending.
+If evidence is ambiguous or still loading, continue proportionate read-only observation or wait and inspect again
+when it can provide new evidence. There is no one-check limit. Do not repeatedly analyze an unchanged screenshot.
+The prohibition is duplicate submission, NOT result verification: do not tap Send again or re-enter the same
+message unless failure is positively established and retry is within the user's request. Never resend as a test.
+Stop observing when the result is clear, or when further checks cannot resolve it; report remaining uncertainty.
+Distinguish an outgoing bubble from server delivery and recipient read receipts; claim only what was observed.
+Do not create crops/pixel scripts or manually delete screenshot files for routine messaging tasks.
+Immediately finish with a short explicit report: completed actions, observed result, and remaining uncertainty.
+Never substitute process narration for that report, and never claim delivered/read from a send-button click alone.
 """
 
 RUNTIME_SETTINGS_PROMPT = """SETTINGS MODULE
@@ -648,8 +667,9 @@ def runtime_system_prompt(prompt: str, profile: AgentProfile) -> str:
         selected.append(RUNTIME_MEDIA_PROMPT)
     if profile == AgentProfile.GUARDIAN:
         selected.append(RUNTIME_SEARCH_PROMPT)
+    intent = routing_intent(prompt)
     for pattern, module in _RUNTIME_MODULE_PATTERNS:
-        if pattern.search(prompt) and module not in selected:
+        if pattern.search(intent) and module not in selected:
             selected.append(module)
     return _adapt_system_prompt_for_current_platform("\n\n".join(selected))
 
@@ -1326,6 +1346,21 @@ class AgentEngine:
         if effective_selector.startswith("local-"):
             return None
         return DEEPSEEK_V4_CONTEXT_WINDOW_TOKENS
+
+    @staticmethod
+    def _artifact_request_text(task: AgentTask) -> str:
+        """Use durable user turns, never mixed tool/model continuation context."""
+        turns = [*task.continuation_instructions, task.prompt]
+        continuation = re.compile(
+            r"(?:继续(?:吧|执行|任务|处理)?|好(?:的|了)?|可以(?:了)?|现在可以(?:了吗|吗)?|"
+            r"重试|再试(?:一次)?|continue|resume|retry|ok(?:ay)?|yes|go ahead)[。.!！?？\s]*",
+            re.IGNORECASE,
+        )
+        for value in reversed(turns):
+            text = str(value or "").strip()
+            if text and not continuation.fullmatch(text):
+                return text
+        return task.prompt
 
     @staticmethod
     def _requested_artifact_extensions(prompt: str) -> set[str]:
@@ -3127,7 +3162,7 @@ class AgentEngine:
         background_preview_failure_reported = False
         required_output_retries = 0
         requested_artifact_extensions = self._requested_artifact_extensions(
-            task.context_prompt or task.prompt
+            self._artifact_request_text(task)
         )
         contract_recovery_pending = False
         failed_tool_attempts: dict[str, tuple[str, int]] = {}
@@ -3139,6 +3174,10 @@ class AgentEngine:
         last_prompt_tokens = 0
         cumulative_context_ledger: list[str] = []
         context_checkpoint_archives: list[str] = []
+        mobile_short_task = simple_mobile_task(task.prompt, task.agent_profile)
+        mobile_started_at = asyncio.get_running_loop().time()
+        mobile_checkpoint_sent = False
+        mobile_report_only = False
 
         def reset_semantic_recovery(*, reset_total: bool = False) -> None:
             """Reset consecutive categories; only a new user turn resets total."""
@@ -3301,6 +3340,26 @@ class AgentEngine:
                     *schemas,
                     *specialist_tool_schemas(current_specialist_candidates()),
                 ]
+                if mobile_short_task and not mobile_report_only:
+                    elapsed = asyncio.get_running_loop().time() - mobile_started_at
+                    if step > 24 or elapsed > 180:
+                        mobile_report_only = True
+                        messages.append({"role": "user", "content": (
+                            "HOST SHORT-PHONE-TASK CHECKPOINT: This single-action task has spent its execution "
+                            "budget. Do not perform further tools, diagnostics, cleanup or sending. Give the user "
+                            "a concise final report NOW: what actually happened, what is verified, what remains "
+                            "uncertain, and the smallest next action if blocked. Do not claim success without evidence."
+                        )})
+                        await self.emit_async(task, "step_warning", {"message": "操作耗时超出预期，正在汇报已有结果和阻碍"})
+                    elif not mobile_checkpoint_sent and (step > 12 or elapsed > 90):
+                        mobile_checkpoint_sent = True
+                        messages.append({"role": "user", "content": (
+                            "HOST EFFICIENCY CHECK: This is a short phone task. Finish from existing evidence. "
+                            "Do not repeat failed input methods, revisit settings, or start pixel/OCR diagnostics. "
+                            "Use at most one direct alternate route and one outcome check, then report."
+                        )})
+                if mobile_report_only:
+                    schemas = []
                 current_team_speaker = (
                     team_execution_members[team_execution_index]
                     if team_execution_index < len(team_execution_members)
@@ -3546,6 +3605,8 @@ class AgentEngine:
                 message = reply.message
                 messages.append(message)
                 tool_calls = message.get("tool_calls") or []
+                if mobile_report_only and tool_calls:
+                    raise RuntimeError("简单手机操作已停止继续试错；模型未按要求汇报结果。请查看已有操作记录后继续，勿重复发送。")
                 if not tool_calls:
                     content = str(message.get("content") or "").strip()
                     # A follow-up can arrive while the provider is producing this
@@ -3873,8 +3934,8 @@ class AgentEngine:
                         )
                     reset_semantic_recovery()
                     task.result = content
+                    await self.emit_async(task, "assistant", {"content": task.result, "final": True})
                     task.status = TaskStatus.COMPLETED
-                    await self.emit_async(task, "assistant", {"content": task.result})
                     await self.emit_async(task, "status", {"status": task.status})
                     await self.audit.write("task_completed", task.id, {"result": task.result})
                     return
@@ -4590,7 +4651,23 @@ class AgentEngine:
                             )
                     else:
                         failed_tool_attempts.pop(signature, None)
-                    event_result = self._bounded_tool_event_result(result)
+                    model_result = result
+                    if (name == "vision" and arguments.get("mode") == "semantic") or (
+                        name == "mobile_device" and arguments.get("action") == "observe"
+                    ):
+                        model_result = deepcopy(result)
+                        body = model_result.get("result", {})
+                        if isinstance(body, dict):
+                            visual = body.get("analysis", body)
+                            if isinstance(visual, dict) and "ocr" in visual:
+                                evidence_dir = Path(context.workspace) / "work" / "observation-evidence" / task.id
+                                evidence_dir.mkdir(parents=True, exist_ok=True)
+                                evidence_path = evidence_dir / (hashlib.sha256(str(call["id"]).encode()).hexdigest()[:20] + ".json")
+                                await asyncio.to_thread(evidence_path.write_text,
+                                    json.dumps(self._redact(result), ensure_ascii=False, default=str), encoding="utf-8")
+                                visual.pop("ocr", None)
+                                visual["evidence_path"] = str(evidence_path)
+                    event_result = self._bounded_tool_event_result(model_result)
                     await self.emit_async(
                         task, "tool_result", {"tool": name, "result": event_result}
                     )
@@ -4658,7 +4735,7 @@ class AgentEngine:
                     # status, diagnostics and excerpts without spending up to
                     # the normal 100k-character success budget on one error.
                     content = self._tool_output_content(
-                        result,
+                        model_result,
                         limit=16_000 if result.get("ok") is False else 100_000,
                     )
                     messages.append(

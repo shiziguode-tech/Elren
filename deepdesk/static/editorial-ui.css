@@ -3718,3 +3718,7 @@ details[open] > summary {
     border: 1px solid CanvasText;
   }
 }
+/* Finished tasks lead with their report; history remains available on demand. */
+.completed-process { margin: 12px 0 24px; }
+.completed-process > summary { cursor: pointer; padding: 10px 14px; color: var(--muted, #666); font-size: 13px; }
+.completed-process-content { display: flex; flex-direction: column; gap: 12px; padding-top: 12px; }

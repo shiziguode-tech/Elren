@@ -429,7 +429,7 @@ class CompanionForegroundService : Service() {
                     val accessibility = ElrenAccessibilityService.instance
                         ?: error("Phone-control accessibility is required before screenshots can be captured safely")
                     if (accessibility.requiresUserAuthentication()) {
-                        error("Authentication or verification-code screen detected; screenshot is blocked and user takeover is required")
+                        error("AUTHENTICATION_FIELD_VISIBLE: device is unlocked, but a visible credential input was detected; screenshot is blocked. Ask the user to handle that field, NOT to unlock the device.")
                     }
                     JSONObject().put("image_base64", capture.captureBase64()).put("format", "png")
                 }

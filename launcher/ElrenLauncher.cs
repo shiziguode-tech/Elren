@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -25,6 +26,48 @@ using Microsoft.Web.WebView2.WinForms;
 [assembly: AssemblyProduct("Elren")]
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
+
+[DataContract]
+internal sealed class CompletionTask
+{
+    [DataMember(Name = "id")] public string Id;
+    [DataMember(Name = "status")] public string Status;
+    [DataMember(Name = "updated_at")] public string UpdatedAt;
+    [DataMember(Name = "pinned")] public bool Pinned;
+}
+
+[DataContract]
+internal sealed class CompletionPage
+{
+    [DataMember(Name = "tasks")] public CompletionTask[] Tasks;
+    [DataMember(Name = "has_more")] public bool HasMore;
+}
+
+internal sealed class CompletionTracker
+{
+    private readonly DateTimeOffset started;
+    private readonly HashSet<string> delivered = new HashSet<string>(StringComparer.Ordinal);
+    internal CompletionTracker(DateTimeOffset started) { this.started = started; }
+    internal bool IsHistorical(CompletionTask task)
+    {
+        DateTimeOffset updated;
+        return !DateTimeOffset.TryParse(task.UpdatedAt, CultureInfo.InvariantCulture,
+            DateTimeStyles.None, out updated) || updated < started;
+    }
+    internal bool Take(CompletionTask task)
+    {
+        if (task == null || String.IsNullOrEmpty(task.Id)
+            || !Regex.IsMatch(task.Id, "\\A[a-zA-Z0-9_-]{1,128}\\z")) return false;
+        if (task.Status != "completed")
+        {
+            if (task.Status == "running" || task.Status == "queued" || task.Status == "waiting_user")
+                delivered.Remove(task.Id);
+            return false;
+        }
+        if (IsHistorical(task)) return false;
+        return delivered.Add(task.Id);
+    }
+}
 
 // A single surface renderer avoids WinForms' separate image-margin gradient,
 // classic selection fill and system border producing mismatched colour blocks.
@@ -596,6 +639,10 @@ internal sealed class DesktopShellForm : Form
     private bool allowClose;
     private bool fallbackBrowser;
     private bool trayHintShown;
+    private readonly CompletionTracker completionTracker = new CompletionTracker(DateTimeOffset.UtcNow);
+    private readonly Queue<string> completionNotifications = new Queue<string>();
+    private DateTime nextCompletionNotification = DateTime.MinValue;
+    private string notifiedTaskId;
 
     public DesktopShellForm(string root, string localUrl, EventWaitHandle showSignal)
     {
@@ -679,6 +726,11 @@ internal sealed class DesktopShellForm : Form
         };
         trayIcon = new NotifyIcon { Icon = Icon, Text = "Elren", ContextMenuStrip = trayMenu, Visible = true };
         trayIcon.DoubleClick += delegate { ActivateWindow(); };
+        trayIcon.BalloonTipClicked += delegate {
+            ActivateWindow();
+            if (browserReady && !String.IsNullOrEmpty(notifiedTaskId))
+                webView.Source = new Uri(localUrl + "?task=" + Uri.EscapeDataString(notifiedTaskId));
+        };
         Shown += DesktopShellForm_Shown;
         FormClosing += DesktopShellForm_FormClosing;
         FormClosed += DesktopShellForm_FormClosed;
@@ -1395,6 +1447,7 @@ internal sealed class DesktopShellForm : Form
                 // the HTTP health endpoint slow.  This was the cause of the repeated
                 // 15-second restart loop seen in launcher logs.
                 failedHealthChecks = 0;
+                if (probe == ServiceProbeResult.Ready) await PollCompletionNotifications();
                 return;
             }
             failedHealthChecks++;
@@ -1422,6 +1475,71 @@ internal sealed class DesktopShellForm : Form
             }
         }
         finally { healthCheckRunning = false; }
+    }
+
+    private List<CompletionTask> ReadRecentCompletions()
+    {
+        var tasks = new List<CompletionTask>();
+        var elapsed = Stopwatch.StartNew();
+        for (int offset = 0; offset < 10000; offset += 100)
+        {
+            if (elapsed.ElapsedMilliseconds > 4000) throw new TimeoutException();
+            var request = (HttpWebRequest)WebRequest.Create(localUrl +
+                "api/tasks?limit=100&offset=" + offset.ToString(CultureInfo.InvariantCulture));
+            request.Method = "GET";
+            request.Proxy = null;
+            request.AllowAutoRedirect = false;
+            request.Timeout = 1500;
+            request.ReadWriteTimeout = 1500;
+            using (closeToken.Token.Register(() => request.Abort()))
+            using (var deadline = new System.Threading.Timer(_ => request.Abort(), null, 1500, Timeout.Infinite))
+            using (var response = request.GetResponse())
+            using (var stream = response.GetResponseStream())
+            using (var bytes = new MemoryStream())
+            {
+                var buffer = new byte[8192];
+                int count;
+                while ((count = stream.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    if (bytes.Length + count > 4 * 1024 * 1024) throw new InvalidDataException();
+                    bytes.Write(buffer, 0, count);
+                }
+                bytes.Position = 0;
+                var page = (CompletionPage)new DataContractJsonSerializer(typeof(CompletionPage)).ReadObject(bytes);
+                if (page == null || page.Tasks == null) throw new InvalidDataException();
+                tasks.AddRange(page.Tasks);
+                if (!page.HasMore || page.Tasks.Length == 0) break;
+                // The API sorts pinned first, then newest updates. Skip historical
+                // pages only after reaching an unpinned historical task.
+                var last = page.Tasks[page.Tasks.Length - 1];
+                if (last != null && !last.Pinned && completionTracker.IsHistorical(last)) break;
+            }
+        }
+        return tasks;
+    }
+
+    private async Task PollCompletionNotifications()
+    {
+        try
+        {
+            var completed = await Task.Run(() => ReadRecentCompletions());
+            if (exiting || IsDisposed || closeToken.IsCancellationRequested) return;
+            foreach (var task in completed)
+                if (completionTracker.Take(task)) completionNotifications.Enqueue(task.Id);
+            if (completionNotifications.Count == 0 || DateTime.UtcNow < nextCompletionNotification) return;
+            // Keep task content out of lock-screen notifications. The click opens
+            // the corresponding report without executing or resuming any task.
+            notifiedTaskId = completionNotifications.Peek();
+            trayIcon.ShowBalloonTip(8000, T("Elren · 任务已完成", "Elren · Task completed"),
+                T("任务已完成，点击查看具体操作汇报。", "Your task is complete. Click to view the report."), ToolTipIcon.Info);
+            completionNotifications.Dequeue();
+            nextCompletionNotification = DateTime.UtcNow.AddSeconds(10);
+        }
+        catch
+        {
+            // Notification delivery must never turn a healthy backend into a
+            // restart or change task status. Retry on the next healthy tick.
+        }
     }
 
     private void WebView_NavigationStarting(object sender, CoreWebView2NavigationStartingEventArgs e)

@@ -3417,6 +3417,9 @@ function renderTerminalState(task) {
   if (task.status === "completed") {
     finalizeCommandActivityGroups();
     terminalStatusRendered = task.status;
+    if (finalReportEvent(task)) return;
+    const label = task.result ? uiText("任务已结束 · 查看操作汇报", "Task finished · View report") : uiText("任务已结束，但结果汇报缺失", "Task finished, but the report is missing");
+    $("#timeline").insertAdjacentHTML("beforeend", `<div class="event terminal-event completed critical-event" role="status"><div class="event-card"><strong>${escapeHtml(label)}</strong></div></div>`);
     return;
   }
   const terminal = terminalStatePresentation(task);
@@ -3503,10 +3506,15 @@ function isFailedToolResult(event) {
   return value?.ok === false || Boolean(value?.error);
 }
 
+function finalReportEvent(task) {
+  if (!["completed", "failed", "cancelled"].includes(task?.status) || !String(task.result || "").trim()) return null;
+  return { id: `final-${task.id || "turn"}`, type: "assistant", data: { content: task.result, final: true } };
+}
+
 function isFinalAssistantEvent(event, task) {
   if (event.type !== "assistant" || !["completed", "failed", "cancelled"].includes(task?.status)) return false;
   const assistants = (task.events || []).filter((item) => item.type === "assistant");
-  return assistants.at(-1)?.id === event.id && Boolean(task.result);
+  return Boolean(task.result) && String(event.data?.content || "").trim() === String(task.result).trim();
 }
 
 function eventPresentation(event, isFinal = false) {
@@ -3529,6 +3537,7 @@ function captureTimelineDisclosureState(timeline = $("#timeline")) {
       technical: [...details.querySelectorAll(".event-technical-details")].map((item) => item.open),
     })),
     liveActivity: Boolean(timeline.querySelector(".live-activity")?.open),
+    completedProcesses: [...timeline.querySelectorAll(".completed-process")].filter((item) => item.open).map((item) => item.dataset.taskId),
   };
 }
 
@@ -3544,6 +3553,25 @@ function restoreTimelineDisclosureState(timeline, state = {}) {
   });
   const liveActivity = timeline.querySelector(".live-activity");
   if (liveActivity && state.liveActivity) liveActivity.open = true;
+  timeline.querySelectorAll(".completed-process").forEach((item) => {
+    item.open = (state.completedProcesses || []).includes(item.dataset.taskId);
+  });
+}
+
+function collapseCompletedProcess(task, promptNode) {
+  if (task.status !== "completed" || !finalReportEvent(task) || !promptNode) return null;
+  const details = document.createElement("details");
+  details.className = "completed-process";
+  details.dataset.taskId = String(task.id || "turn");
+  const summary = document.createElement("summary");
+  summary.textContent = uiText("查看执行过程", "View execution history");
+  details.append(summary);
+  const content = document.createElement("div");
+  content.className = "completed-process-content";
+  while (promptNode.nextSibling) content.append(promptNode.nextSibling);
+  if (!content.childNodes.length) return null;
+  details.append(content);
+  return details;
 }
 
 function renderArchivedConversationTurn(turn) {
@@ -3552,12 +3580,14 @@ function renderArchivedConversationTurn(turn) {
   // renderEvent ignores approval/status controls. Terminal status makes old
   // command groups inert; the next prompt separates them from the live run.
   const events = Array.isArray(turn.events) ? turn.events : [];
+  const promptNode = timeline.lastElementChild;
   for (const event of events) {
-    renderEvent(event, turn.status, isFinalAssistantEvent(event, turn));
+    if (!isFinalAssistantEvent(event, turn)) renderEvent(event, turn.status, false);
   }
-  if (turn.result && !events.some(event => event.type === "assistant")) {
-    renderEvent({ type: "assistant", data: { content: turn.result } }, turn.status, true);
-  }
+  const report = finalReportEvent(turn);
+  const process = collapseCompletedProcess(turn, promptNode);
+  if (report) renderEvent(report, turn.status, true);
+  if (process) timeline.append(process);
 }
 
 function rebuildTaskTimeline(task) {
@@ -3578,10 +3608,15 @@ function rebuildTaskTimeline(task) {
   (task.conversation_turns || []).forEach(renderArchivedConversationTurn);
   timeline.insertAdjacentHTML("beforeend", `<div class="event task-prompt user-authored"><div class="event-icon">${taskSourceIcon(task.source)}</div><div class="event-card"><strong>${isEnglish() ? "Your task" : "你的任务"}${sourceLabel ? ` · ${sourceLabel}` : ""}</strong>${recallMarkup}<p>${escapeHtml(task.prompt)}</p>${sentAttachmentMarkup(task.attachments)}</div></div>`);
   terminalStatusRendered = null;
+  const promptNode = timeline.lastElementChild;
   (task.events || []).forEach((event) => {
     if (task.status === "failed" && ["error", "loop_detected"].includes(event.type)) return;
-    renderEvent(event, task.status, isFinalAssistantEvent(event, task));
+    if (!isFinalAssistantEvent(event, task)) renderEvent(event, task.status, false);
   });
+  const report = finalReportEvent(task);
+  const process = collapseCompletedProcess(task, promptNode);
+  if (report) renderEvent(report, task.status, true);
+  if (process) timeline.append(process);
   updateTaskOverview(task);
   restoreTimelineDisclosureState(timeline, disclosureState);
   lastEventId = (task.events || []).at(-1)?.id || null;
@@ -4313,6 +4348,10 @@ async function poll(expectedTaskId = taskId, expectedGeneration = taskViewGenera
       pendingHumanAction = null;
       $("#humanAction").classList.add("hidden");
       renderTerminalState(task);
+      if (becameTerminal && task.status === "completed") {
+        showToast(uiText("任务已结束，操作汇报已显示", "Task finished; the report is ready"), "info");
+        if (timelineScrollState.follow) [...document.querySelectorAll("#timeline .final-response")].at(-1)?.scrollIntoView({ block: "end" });
+      }
       continuationTaskId = task.id;
       taskId = null;
       syncComposerAction();

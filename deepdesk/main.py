@@ -677,6 +677,10 @@ def create_app(
             os.environ.get("ELREN_ALLOW_UNSAFE_IN_PROCESS_PLUGINS", "") == "1"
         ),
     )
+    phone_vision = VisionTool(
+        vision_runtime, settings.screenshot_dir, windows_ocr=windows_ocr,
+        paddle_ocr=paddle_ocr, active_model=lambda: client.effective_model,
+    )
     builtin_tools = [
             FileSystemTool(),
             DocumentTool(settings.screenshot_dir),
@@ -684,7 +688,7 @@ def create_app(
             JianpuOMRTool(settings.screenshot_dir),
             JianpuToStaffTool(settings.screenshot_dir),
             memory_tool,
-            MobileDeviceTool(mobile_bridge, settings.screenshot_dir),
+            MobileDeviceTool(mobile_bridge, settings.screenshot_dir, vision=phone_vision),
             MediaGenerationTool(media_generator),
             MCPTool(mcp_runtime),
             SkillsTool(tool_credentials.status_for),
@@ -693,13 +697,7 @@ def create_app(
             ClipboardTool(),
             background_browser_tool,
             ComputerTool(settings.screenshot_dir),
-            VisionTool(
-                vision_runtime,
-                settings.screenshot_dir,
-                windows_ocr=windows_ocr,
-                paddle_ocr=paddle_ocr,
-                active_model=lambda: client.effective_model,
-            ),
+            phone_vision,
             web_tool,
             OpenClawBridgeTool(openclaw_bridge),
             RemoteSettingsTool(settings_update_ref, settings.workspace / "outputs"),

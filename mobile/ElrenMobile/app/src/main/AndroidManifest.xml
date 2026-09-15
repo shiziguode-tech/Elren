@@ -44,6 +44,16 @@
             android:exported="false"
             android:foregroundServiceType="connectedDevice|mediaProjection" />
         <service
+            android:name=".ElrenInputMethodService"
+            android:label="Elren 辅助输入"
+            android:exported="true"
+            android:permission="android.permission.BIND_INPUT_METHOD">
+            <intent-filter>
+                <action android:name="android.view.InputMethod" />
+            </intent-filter>
+            <meta-data android:name="android.view.im" android:resource="@xml/elren_input_method" />
+        </service>
+        <service
             android:name=".ElrenAccessibilityService"
             android:exported="false"
             android:label="@string/accessibility_service_name"

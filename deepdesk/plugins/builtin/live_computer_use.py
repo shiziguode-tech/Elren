@@ -22,7 +22,6 @@ from uuid import uuid4
 from PIL import Image, ImageChops, ImageGrab
 
 from deepdesk.command_safety import allows_permanent_delete
-from deepdesk.harness import allows_live_computer_use_start
 from deepdesk.models import Risk
 from deepdesk.plugins.base import ToolContext, ToolPlugin, finish_owned_work
 from deepdesk.windows_activity import check_input_permit, foreground_input_scope
@@ -2329,8 +2328,8 @@ class LiveComputerUseTool(ToolPlugin):
     name = "live_computer_use"
     description = (
         "Lease-protected Live Computer Use for the user's real visible Windows desktop. "
-        "Use ONLY when the CURRENT request explicitly needs foreground computer control or a logged-in "
-        "visible application cannot be operated through windows_ui/background_browser. Call start, use its "
+        "Use when foreground interaction is necessary for the user's authorized task, including its continuation. "
+        "Prefer windows_ui/background_browser when they can do the work without foreground input. Call start, use its "
         "session_lease and observation_id for actions or an explicit sequence. Remote visual checks run before/after "
         "each complete action. Supply action_id for retry deduplication, optional target_description and expected_result; then "
         "stop. Do not use it for ordinary file, code, web, background UIA, CAPTCHA/MFA, credential, biometric, "
@@ -2500,14 +2499,6 @@ class LiveComputerUseTool(ToolPlugin):
         lease = str(arguments.get("session_lease") or "")
         try:
             if action == "start":
-                if not allows_live_computer_use_start(
-                    context.user_prompt,
-                    context.agent_profile,
-                ):
-                    raise PermissionError(
-                        "Live Computer Use can start only when the current request explicitly "
-                        "requires real foreground computer control or uses the Computer Use profile"
-                    )
                 language = str(arguments.get("language") or "auto")
                 if language == "auto":
                     language = (

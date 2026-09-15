@@ -526,16 +526,15 @@ def test_native_win32_banner_opens_and_closes_without_tk() -> None:
 
 
 @pytest.mark.asyncio
-async def test_start_requires_current_foreground_control_intent(live_fixture):
+@pytest.mark.parametrize("prompt", ["继续", "点击设置按钮", "Open the settings panel"])
+async def test_start_does_not_require_magic_words_or_special_profile(live_fixture, prompt):
     tool, controller, context, _screen, _driver, _foreground = live_fixture
-    context.user_prompt = "Summarize the attached document"
-    with pytest.raises(PermissionError, match="current request"):
-        await tool.execute({"action": "start"}, context)
-    assert controller.public_status()["active"] is False
-
-    context.agent_profile = AgentProfile.COMPUTER_USE.value
+    context.user_prompt = prompt
+    context.agent_profile = AgentProfile.GENERAL.value
     started = await tool.execute({"action": "start"}, context)
     assert started["active"] is True
+    assert controller.public_status()["active"] is True
+    assert started["session_lease"]
 
 
 @pytest.mark.parametrize(

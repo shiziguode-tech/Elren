@@ -138,9 +138,26 @@ def _terms(value: str) -> set[str]:
     return words
 
 
+def routing_intent(prompt: str) -> str:
+    """Quoted message bodies are data, not requests to code/test/configure the host."""
+    if re.search(r"(?i)(发送|发消息|发给|发送消息|send|message|text)", prompt):
+        return re.sub(r'[“”][^“”]*[“”]|「[^」]*」|"[^"\n]*"', ' [message body] ', prompt)
+    return prompt
+
+
+def simple_mobile_task(prompt: str, profile: AgentProfile) -> bool:
+    intent = routing_intent(prompt)
+    return profile == AgentProfile.GENERAL and bool(
+        re.search(r"(?i)(手机|平板|安卓|phone|android|mobile)", intent)
+        and re.search(r"(?i)(发送|发消息|发给|打开|send|message|open)", intent)
+        and not re.search(r"(?i)(批量|全部|所有|循环|监控|开发|代码|修复|调试|batch|every|monitor|debug|implement)", intent)
+    )
+
+
 def recommended_tool_names(prompt: str, profile: AgentProfile) -> list[str]:
     """Return an ordered attention shortlist without removing any capability."""
 
+    prompt = routing_intent(prompt)
     matched: list[str] = []
     for pattern, matched_names in _INTENT_TOOLS:
         if pattern.search(prompt):
@@ -151,7 +168,7 @@ def recommended_tool_names(prompt: str, profile: AgentProfile) -> list[str]:
     # the long-standing profile-first order.
     names = (
         [*matched, *profile_names]
-        if "jianpu_omr" in matched or "jianpu_to_staff" in matched
+        if "jianpu_omr" in matched or "jianpu_to_staff" in matched or "mobile_device" in matched
         else [*profile_names, *matched]
     )
     names.extend(("request_human_action", "filesystem"))

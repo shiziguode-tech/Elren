@@ -1,4 +1,29 @@
-# Source preparation: v272-agent-fix
+# Source synchronization: v272-sync-20260914
+
+## September 14 synchronization
+
+- Scope artifact requirements to substantive user requests, not quoted tool or
+  model context. Short continuation messages preserve the actual request.
+- Permit proportionate read-only mobile outcome verification without repeating
+  submissions. Add combined mobile screenshot/semantic observation and focused
+  routing for short phone tasks.
+- Add Android auxiliary input with temporary input-method switching, editor
+  validation, and authentication-screen checks.
+- Remove the Windows live_computer_use start keyword/profile gate. Desktop
+  leases, approvals, visual checks, cancellation and emergency stop remain.
+- Display final reports consistently and add Windows completion notifications.
+
+The Apple Silicon application was rebuilt on an M4 Mac (macOS 26.0), with 35
+related regression tests passing, resource/model checks, and ad-hoc signature
+verification. The resulting ZIP passed CRC and transfer SHA-256 verification.
+Native GUI acceptance for this rebuilt application has not been performed; it
+is not Developer ID signed or Apple-notarized. The delivered Mac build retained
+its existing platform-specific live_computer_use implementation.
+
+This repository synchronization contains source and tests only. It does not
+publish private archives, credentials, chat databases, or the binary ZIP assets.
+
+## Previous source preparation
 
 This source snapshot includes the Windows live_computer_use upgrade and the
 agent prompt/recovery, tool-selection and context-compaction fixes. The public

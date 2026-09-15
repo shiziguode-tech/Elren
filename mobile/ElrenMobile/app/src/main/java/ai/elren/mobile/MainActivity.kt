@@ -258,6 +258,17 @@ class MainActivity : AppCompatActivity() {
         root.addView(accessibilityState, flexibleMargins(bottom = 12))
         updateAccessibilityState()
 
+        root.addView(title(text("首次请启用 Elren 辅助输入。Android 11 及以上会在输入时自动切换，结束后尝试恢复原键盘；不需要每次手动选择。旧版系统请手动切换。",
+            "Enable Elren input once. On Android 11+, input commands switch automatically and attempt to restore your previous keyboard afterward. Older Android versions require manual selection."), 13f), flexibleMargins())
+        root.addView(Button(this).apply {
+            text = text("1. 启用 Elren 辅助输入", "1. Enable Elren input")
+            setOnClickListener { startActivity(Intent(Settings.ACTION_INPUT_METHOD_SETTINGS)) }
+        }, flexibleMargins())
+        root.addView(Button(this).apply {
+            text = text("手动切换键盘（备用）", "Switch keyboard manually (fallback)")
+            setOnClickListener { getSystemService(android.view.inputmethod.InputMethodManager::class.java).showInputMethodPicker() }
+        }, flexibleMargins())
+
         root.addView(Button(this).apply {
             text = text("允许读取屏幕（截图时需要）", "Allow screen capture (for screenshots)")
             minimumHeight = dp(52)

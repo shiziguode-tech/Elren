@@ -15,7 +15,7 @@ android {
         targetSdk = 34
         // Keep the public version name at 1.0 while ensuring Android/OEM
         // installers replace earlier pairing and screen-capture builds.
-        versionCode = 11
+        versionCode = 16
         versionName = "1.0"
     }
     buildFeatures { buildConfig = true }
@@ -29,6 +29,7 @@ android {
 }
 
 dependencies {
+    testImplementation("junit:junit:4.13.2")
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")

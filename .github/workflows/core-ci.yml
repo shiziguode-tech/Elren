@@ -46,6 +46,8 @@ jobs:
           python -m pytest -q tests/test_release_archive.py
           tests/test_repository_delivery.py tests/test_prompt_module_scope.py
           tests/test_agent_deep_validation.py
+          tests/test_artifact_request_scope.py tests/test_mobile_verification_policy.py
+          tests/test_mobile_efficiency.py
       - name: Build Python distributions
         run: python -m build
       - name: Compile Windows launcher

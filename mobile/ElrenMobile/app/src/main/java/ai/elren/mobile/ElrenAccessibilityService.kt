@@ -1,20 +1,30 @@
 package ai.elren.mobile
 
 import android.accessibilityservice.AccessibilityService
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.accessibilityservice.GestureDescription
+import android.accessibilityservice.InputMethod
+import android.annotation.TargetApi
+import android.app.KeyguardManager
+import android.text.InputType
 import android.content.Intent
 import android.graphics.Path
 import android.graphics.Rect
 import android.net.Uri
 import android.os.Bundle
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import android.view.accessibility.AccessibilityWindowInfo
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Callable
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.FutureTask
 import java.util.concurrent.TimeUnit
 
 class ElrenAccessibilityService : AccessibilityService() {
@@ -25,8 +35,17 @@ class ElrenAccessibilityService : AccessibilityService() {
     private val main = Handler(Looper.getMainLooper())
     @Volatile private var lastUiMotionAt = 0L
     private val adaptiveOverlap = mutableMapOf("down" to 0.45, "up" to 0.45)
+    private val textInputLock = Any()
 
-    override fun onServiceConnected() { instance = this }
+    override fun onServiceConnected() {
+        if (Build.VERSION.SDK_INT >= 33) {
+            // Use Android's accessibility input connection; no keyboard switch or clipboard needed.
+            serviceInfo = serviceInfo.apply {
+                flags = flags or AccessibilityServiceInfo.FLAG_INPUT_METHOD_EDITOR
+            }
+        }
+        instance = this
+    }
     override fun onUnbind(intent: Intent?): Boolean {
         if (instance === this) instance = null
         return super.onUnbind(intent)
@@ -45,6 +64,7 @@ class ElrenAccessibilityService : AccessibilityService() {
     override fun onInterrupt() = Unit
 
     fun execute(action: String, args: JSONObject): JSONObject {
+        if (action == "type") return synchronized(textInputLock) { setTextVerified(args.getString("text")) }
         val latch = CountDownLatch(1)
         var output: JSONObject = JSONObject().put("accepted", false)
         var failure: Throwable? = null
@@ -57,27 +77,25 @@ class ElrenAccessibilityService : AccessibilityService() {
     }
 
     fun requiresUserAuthentication(): Boolean {
-        var seen = 0
-        fun scan(node: AccessibilityNodeInfo?, depth: Int): Boolean {
-            if (node == null) return false
-            // Treat an abnormal/deceptively deep hierarchy as sensitive. This
-            // avoids a stack overflow and, more importantly, never converts a
-            // traversal limit into permission to act on an uninspected screen.
-            if (depth > 20 || seen++ >= 2_000) return true
-            if (isSensitive(node)) return true
-            for (index in 0 until node.childCount) {
-                if (scan(node.getChild(index), depth + 1)) return true
-            }
-            return false
+        val result = AuthenticationScreenScan.scan(rootInActiveWindow,
+            children = { node -> (0 until node.childCount.coerceAtMost(10_001)).mapNotNull(node::getChild) },
+            protected = { node -> AuthenticationScreenScan.isAuthenticationField(
+                node.isVisibleToUser, node.isPassword, node.isEditable, isSensitive(node)) })
+        check(result != AuthenticationScreenScan.Result.UNKNOWN) {
+            "UI_INSPECTION_INCOMPLETE: unable to verify active UI; this does NOT establish a locked or authentication screen. Refresh accessibility state and inspect again."
         }
-        return scan(rootInActiveWindow, 0)
+        return result == AuthenticationScreenScan.Result.AUTHENTICATION
     }
 
     private fun executeOnMain(action: String, args: JSONObject): JSONObject = when (action) {
-        "inspect" -> JSONObject().put("package", rootInActiveWindow?.packageName?.toString().orEmpty()).put("requires_user_authentication", requiresUserAuthentication()).put("tree", inspectTree())
+        "inspect" -> JSONObject().put("package", rootInActiveWindow?.packageName?.toString().orEmpty())
+            .put("requires_user_authentication", requiresUserAuthentication()).put("tree", inspectTree())
+            .put("app_build", BuildConfig.VERSION_CODE)
+            .put("elren_keyboard_selected", ElrenInputMethodService.isSelected(this))
+            .put("elren_keyboard_connected", ElrenInputMethodService.instance != null)
         else -> {
             if (action !in setOf("back", "home", "recents") && requiresUserAuthentication())
-                error("Authentication, verification code, or credential screen detected; user takeover is required")
+                error("AUTHENTICATION_FIELD_VISIBLE: visible credential input detected; this does NOT establish device lock. Ask the user to handle that field only; do not instruct screen unlock.")
             executeOrdinaryAction(action, args)
         }
     }
@@ -86,7 +104,6 @@ class ElrenAccessibilityService : AccessibilityService() {
         "tap" -> gesture(args.getDouble("x").toFloat(), args.getDouble("y").toFloat(), args.getDouble("x").toFloat(), args.getDouble("y").toFloat(), 80)
         "scroll" -> scrollPage(args)
         "swipe" -> gesture(args.getDouble("x").toFloat(), args.getDouble("y").toFloat(), args.getDouble("end_x").toFloat(), args.getDouble("end_y").toFloat(), args.optLong("duration_ms", 450))
-        "type" -> setText(args.getString("text"))
         "back" -> global(GLOBAL_ACTION_BACK)
         "home" -> global(GLOBAL_ACTION_HOME)
         "recents" -> global(GLOBAL_ACTION_RECENTS)
@@ -235,26 +252,279 @@ class ElrenAccessibilityService : AccessibilityService() {
         return JSONObject().put("accepted", true).put("url", value)
     }
 
-    private fun setText(text: String): JSONObject {
-        require(text.length <= 20_000) { "Text is too long" }
-        val focused = rootInActiveWindow?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
-            ?: findEditable(rootInActiveWindow)
-            ?: error("No editable field is focused")
-        val bundle = Bundle().apply { putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text) }
-        return JSONObject().put("accepted", focused.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, bundle))
+    private fun <T> onMain(block: () -> T): T {
+        if (Looper.myLooper() == Looper.getMainLooper()) return block()
+        val task = FutureTask(Callable(block))
+        main.post(task)
+        try {
+            return task.get(3, TimeUnit.SECONDS)
+        } catch (error: ExecutionException) {
+            throw (error.cause ?: error)
+        } finally {
+            // Do not leave a queued input running after a timeout.
+            task.cancel(false)
+            main.removeCallbacks(task)
+        }
     }
 
-    private fun findEditable(root: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
+    private fun usableTextField(node: AccessibilityNodeInfo): Boolean {
+        val bounds = Rect().also(node::getBoundsInScreen)
+        return node.isEditable && node.isEnabled && node.isVisibleToUser &&
+            !isSensitive(node) && !bounds.isEmpty
+    }
+
+    private fun chooseTextField(): AccessibilityNodeInfo? {
+        check(!requiresUserAuthentication()) { "Protected screen detected; user takeover is required" }
+        val roots = windows.filter {
+            it.type == AccessibilityWindowInfo.TYPE_APPLICATION && (it.isActive || it.isFocused)
+        }.mapNotNull { it.root }.ifEmpty { listOfNotNull(rootInActiveWindow) }
+        val fields = mutableListOf<AccessibilityNodeInfo>()
         var seen = 0
-        fun visit(node: AccessibilityNodeInfo?, depth: Int): AccessibilityNodeInfo? {
-            if (node == null || depth > 20 || seen++ >= 2_000) return null
-            if (node.isEditable) return node
-            for (index in 0 until node.childCount) {
-                visit(node.getChild(index), depth + 1)?.let { return it }
-            }
-            return null
+        fun visit(node: AccessibilityNodeInfo?, depth: Int) {
+            if (node == null) return
+            check(depth <= 20 && seen++ < 2_000) { "Input hierarchy is too large; tap the intended field and retry" }
+            if (usableTextField(node) && fields.none { it == node }) fields.add(node)
+            for (index in 0 until node.childCount) visit(node.getChild(index), depth + 1)
         }
-        return visit(root, 0)
+        roots.forEach { visit(it, 0) }
+        val focused = fields.filter { it.isFocused }
+        val field = when {
+            focused.size == 1 -> focused.single()
+            focused.isEmpty() && fields.size == 1 -> fields.single()
+            fields.isEmpty() -> return null
+            else -> error("Multiple editable fields; tap the intended input field before typing")
+        }
+        if (!field.isFocused) {
+            field.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
+            field.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+        }
+        return field
+    }
+
+    private fun requireSameTextField(node: AccessibilityNodeInfo) {
+        check(!requiresUserAuthentication() && node.refresh() && usableTextField(node)) {
+            "Input field disappeared or became protected; inspect the screen before retrying"
+        }
+        check(node.isFocused && findFocus(AccessibilityNodeInfo.FOCUS_INPUT) == node) {
+            "Input focus changed; tap the intended field and retry"
+        }
+    }
+
+    @TargetApi(33)
+    private fun matchingInputConnection(node: AccessibilityNodeInfo): InputMethod.AccessibilityInputConnection? {
+        val method = inputMethod ?: return null
+        val editor = method.currentInputEditorInfo ?: return null
+        if (editor.packageName != node.packageName?.toString()) return null
+        // Reject a stale connection to a different editor in the same application.
+        if (editor.fieldId != 0 && !node.viewIdResourceName.isNullOrEmpty()) {
+            val name = runCatching {
+                packageManager.getResourcesForApplication(editor.packageName).getResourceName(editor.fieldId)
+            }.getOrNull() ?: return null
+            if (name != node.viewIdResourceName) return null
+        }
+        return method.currentInputConnection
+    }
+
+    private val keyboardTransaction = java.util.concurrent.locks.ReentrantLock()
+
+    private fun setTextVerified(text: String): JSONObject {
+        require(text.length <= 20_000) { "Text is too long" }
+        check(Looper.myLooper() != Looper.getMainLooper()) { "Text verification must run on a worker" }
+        check(keyboardTransaction.tryLock()) { "Another keyboard transaction is active" }
+        try {
+            val target = onMain {
+                getSystemService(android.view.inputmethod.InputMethodManager::class.java)
+                    .enabledInputMethodList.firstOrNull {
+                        it.packageName == packageName && it.serviceName == ElrenInputMethodService::class.java.name
+                    }?.id
+            }
+            if (Build.VERSION.SDK_INT >= 30 && target != null) return withAutomaticKeyboard(target, text)
+            return setTextWithExistingMethod(text)
+        } finally { keyboardTransaction.unlock() }
+    }
+
+    @TargetApi(30)
+    private fun withAutomaticKeyboard(target: String, text: String): JSONObject {
+        val foreground = onMain {
+            check(!requiresUserAuthentication()) { "Protected screen; user action required" }
+            chooseTextField() // Focus a visible editor when available; never invent coordinates.
+            rootInActiveWindow?.packageName?.toString() ?: error("No foreground app; no input attempted")
+        }
+        val port = object : TemporaryInputMethod.Port {
+            override fun selected(): String = onMain {
+                android.provider.Settings.Secure.getString(contentResolver,
+                    android.provider.Settings.Secure.DEFAULT_INPUT_METHOD).orEmpty()
+            }
+            override fun switchTo(id: String): Boolean = onMain { softKeyboardController.switchToInputMethod(id) }
+            override fun ready(): Boolean = onMain {
+                check(!requiresUserAuthentication() && rootInActiveWindow?.packageName?.toString() == foreground) {
+                    "Foreground/protected state changed; input cancelled"
+                }
+                ElrenInputMethodService.instance?.readyFor(foreground) == true
+            }
+            override fun pause() { Thread.sleep(50) }
+        }
+        return TemporaryInputMethod(port).use(target) {
+            val keyboard = ElrenInputMethodService.instance ?: error("Keyboard disconnected; no input attempted")
+            keyboard.replaceVerified(text, this)
+        }
+    }
+
+    private fun setTextWithExistingMethod(text: String): JSONObject {
+        if (ElrenInputMethodService.isSelected(this)) {
+            val keyboard = ElrenInputMethodService.instance
+                ?: error("Elren keyboard is selected but not connected yet; tap the input field once, then retry")
+            return keyboard.replaceVerified(text, this)
+        }
+        val field = onMain { chooseTextField() }
+        if (field == null) {
+            check(Build.VERSION.SDK_INT >= 33) { "No visible editable field; tap the intended input field first" }
+            return setTextThroughFocusedEditor(text)
+        }
+        // Let focus and the input connection settle without blocking accessibility callbacks.
+        Thread.sleep(250)
+        val target = object : VerifiedTextInput.Target {
+            override fun read(): String = onMain {
+                requireSameTextField(field)
+                val nodeText = if (field.isShowingHintText) "" else field.text?.toString().orEmpty()
+                if (Build.VERSION.SDK_INT >= 33) {
+                    val surrounding = matchingInputConnection(field)?.getSurroundingText(20_001, 20_001, 0)
+                    if (surrounding != null && surrounding.offset == 0 && surrounding.text.length <= 20_000) {
+                        // Prefer the actual editor over a transient accessibility SET_TEXT echo.
+                        return@onMain surrounding.text.toString()
+                    }
+                }
+                nodeText
+            }
+            override fun setText(text: String) = onMain {
+                requireSameTextField(field)
+                val bundle = Bundle().apply {
+                    putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
+                }
+                field.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, bundle)
+                Unit // Acceptance is not verification; the transaction reads the field back.
+            }
+            override fun replaceThroughInputConnection(text: String, expected: String): Boolean {
+                if (Build.VERSION.SDK_INT < 33) return false
+                return replaceWithEditor(field, text, expected)
+            }
+        }
+        val method = VerifiedTextInput().replace(target, text)
+        return JSONObject().put("accepted", true).put("verified", true)
+            .put("input_method", method).put("characters", text.length)
+    }
+
+    @TargetApi(33)
+    private fun setTextThroughFocusedEditor(text: String): JSONObject {
+        // Some apps (including WeChat tablet layouts) hide the entire editable accessibility tree.
+        // The platform's already-focused editor remains the authoritative input destination.
+        val editor = onMain { inputMethod?.currentInputEditorInfo }
+            ?: error("No active text input connection; tap the intended field to activate input")
+        fun validate() {
+            check(!getSystemService(KeyguardManager::class.java).isDeviceLocked && !requiresUserAuthentication()) {
+                "Protected screen detected; user takeover is required"
+            }
+            check(inputMethod?.currentInputEditorInfo === editor &&
+                rootInActiveWindow?.packageName?.toString() == editor.packageName) {
+                "Active editor changed; inspect the screen before retrying"
+            }
+            val inputClass = editor.inputType and InputType.TYPE_MASK_CLASS
+            val variation = editor.inputType and InputType.TYPE_MASK_VARIATION
+            check(!(inputClass == InputType.TYPE_CLASS_TEXT && variation in setOf(
+                InputType.TYPE_TEXT_VARIATION_PASSWORD, InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD,
+                InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD,
+            )) && !(inputClass == InputType.TYPE_CLASS_NUMBER && variation == InputType.TYPE_NUMBER_VARIATION_PASSWORD)) {
+                "Protected input field; user takeover is required"
+            }
+            val marker = "${editor.hintText?.toString().orEmpty()} ${editor.fieldName.orEmpty()}".lowercase()
+            check(!Regex("otp|verification.?code|passcode|password|验证码|校验码|动态码|口令").containsMatchIn(marker)) {
+                "Protected input field; user takeover is required"
+            }
+        }
+        val connection = onMain { validate(); inputMethod?.currentInputConnection }
+            ?: error("No active text input connection; tap the intended field first")
+        var writeAttempted = false
+        val adapter = object : VerifiedEditorReplacement.Connection {
+            override fun snapshot(): VerifiedEditorReplacement.Snapshot? = onMain {
+                validate()
+                connection.getSurroundingText(20_001, 20_001, 0)?.let {
+                    if (it.offset != 0 || it.text.length > 20_000) return@let null
+                    VerifiedEditorReplacement.Snapshot(it.text.toString(), it.offset, it.selectionStart, it.selectionEnd)
+                }
+            }
+            override fun selectAll(length: Int) = onMain {
+                validate()
+                connection.setSelection(0, length)
+            }
+            override fun commit(text: String) = onMain {
+                validate()
+                writeAttempted = true
+                connection.commitText(text, 1, null)
+            }
+        }
+        var expectedAtCommit = ""
+        val target = object : VerifiedTextInput.Target {
+            override fun read(): String = adapter.snapshot()?.text
+                ?: error(if (writeAttempted)
+                    "INPUT_VERIFICATION_UNAVAILABLE: a write was attempted but could not be verified. Inspect the field before retrying to avoid duplicate text."
+                else
+                    "INPUT_READ_UNAVAILABLE: accessibility could not read the complete editor, so NO WRITE was attempted. This does NOT prove WeChat cannot accept text. Ask the user to enable and select Elren 辅助输入 in the phone Elren app, then retry once. Do not infer previous message delivery from this error.")
+            override fun setText(text: String) = Unit // No exposed node; proceed to the verified editor route.
+            override fun replaceThroughInputConnection(text: String, expected: String): Boolean {
+                expectedAtCommit = expected
+                val guarded = object : VerifiedEditorReplacement.Connection by adapter {
+                    override fun commit(text: String) {
+                        val latest = adapter.snapshot()
+                        check(latest != null && latest.text == expectedAtCommit && latest.start == 0 && latest.end == expectedAtCommit.length) {
+                            "Input selection changed; no text was committed"
+                        }
+                        adapter.commit(text)
+                    }
+                }
+                return VerifiedEditorReplacement().replace(guarded, text, expected)
+            }
+        }
+        val method = VerifiedTextInput().replace(target, text)
+        return JSONObject().put("accepted", true).put("verified", true)
+            .put("input_method", method).put("characters", text.length)
+            .put("target_source", "focused_editor")
+    }
+
+    @TargetApi(33)
+    private fun replaceWithEditor(field: AccessibilityNodeInfo, text: String, expected: String): Boolean {
+        // Pin the connection, but validate the live editor identity before each use.
+        val connection = onMain {
+            requireSameTextField(field)
+            matchingInputConnection(field)
+        } ?: return false
+        val editor = object : VerifiedEditorReplacement.Connection {
+            override fun snapshot(): VerifiedEditorReplacement.Snapshot? = onMain {
+                requireSameTextField(field)
+                if (matchingInputConnection(field) == null) return@onMain null
+                val value = connection.getSurroundingText(20_001, 20_001, 0) ?: return@onMain null
+                val nodeText = if (field.isShowingHintText) "" else field.text?.toString().orEmpty()
+                // A stale SET_TEXT echo is allowed, but never replace a truncated or unrelated draft.
+                if (nodeText != expected && nodeText != text) return@onMain null
+                VerifiedEditorReplacement.Snapshot(
+                    value.text.toString(), value.offset, value.selectionStart, value.selectionEnd,
+                )
+            }
+            override fun selectAll(length: Int) = onMain {
+                requireSameTextField(field)
+                connection.setSelection(0, length)
+            }
+            override fun commit(text: String) = onMain {
+                requireSameTextField(field)
+                check(matchingInputConnection(field) != null) { "Input connection changed; retry after inspecting the screen" }
+                val value = connection.getSurroundingText(20_001, 20_001, 0)
+                check(value != null && value.offset == 0 && value.text.toString() == expected &&
+                    value.selectionStart == 0 && value.selectionEnd == expected.length) {
+                    "Input selection changed; no text was committed"
+                }
+                connection.commitText(text, 1, null)
+            }
+        }
+        return VerifiedEditorReplacement().replace(editor, text, expected)
     }
 
     private fun gesture(startX: Float, startY: Float, endX: Float, endY: Float, duration: Long): JSONObject {
@@ -281,6 +551,8 @@ class ElrenAccessibilityService : AccessibilityService() {
                 .put("bounds", JSONArray(listOf(bounds.left, bounds.top, bounds.right, bounds.bottom)))
                 .put("clickable", node.isClickable)
                 .put("editable", node.isEditable)
+                .put("focused", node.isFocused)
+                .put("visible", node.isVisibleToUser)
                 .put("sensitive", sensitive)
                 .put("enabled", node.isEnabled)
                 .put("children", children)
